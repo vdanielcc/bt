@@ -25,7 +25,7 @@ const defaultConfig: VexConfig = {
   layout: 'horizontal',
   boxed: false,
   sidenav: {
-    title: 'VEX',
+    title: 'BT Events',
     imageUrl: 'assets/img/demo/logo.svg',
     showCollapsePin: true,
     user: {

@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { Form, FormBuilder, FormControl, FormGroup, UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { fadeInUp400ms } from '../../../../../@vex/animations/fade-in-up.animation';
 
@@ -13,7 +13,11 @@ import { fadeInUp400ms } from '../../../../../@vex/animations/fade-in-up.animati
 })
 export class RegisterComponent implements OnInit {
 
-  form: UntypedFormGroup;
+  public simpleEmailPattern = '^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$';
+
+  form!: FormGroup;
+
+  //form: UntypedFormGroup;
 
   inputType = 'password';
   visible = false;
@@ -26,13 +30,13 @@ export class RegisterComponent implements OnInit {
   ngOnInit() {
     this.form = this.fb.group({
       name: ['', Validators.required],
-      email: ['', Validators.required],
+      email: [null, [Validators.required , Validators.pattern(this.simpleEmailPattern) ]],
       password: ['', Validators.required],
       passwordConfirm: ['', Validators.required],
     });
   }
 
-  send() {
+  onSubmit() {
     this.router.navigate(['/']);
   }
 

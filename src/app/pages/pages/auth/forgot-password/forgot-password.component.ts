@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { UntypedFormBuilder, Validators } from '@angular/forms';
+import { Form, FormBuilder, FormControl, FormGroup, UntypedFormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { fadeInUp400ms } from '../../../../../@vex/animations/fade-in-up.animation';
 
@@ -11,9 +11,9 @@ import { fadeInUp400ms } from '../../../../../@vex/animations/fade-in-up.animati
 })
 export class ForgotPasswordComponent implements OnInit {
 
-  form = this.fb.group({
-    email: [null, Validators.required]
-  });
+  public simpleEmailPattern = '^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$';
+
+  form!: FormGroup;
 
   constructor(
     private router: Router,
@@ -21,9 +21,23 @@ export class ForgotPasswordComponent implements OnInit {
   ) { }
 
   ngOnInit() {
+    this.form = this.fb.group({
+      email: [null, [Validators.required , Validators.pattern(this.simpleEmailPattern) ]]
+    });
   }
 
-  send() {
-    this.router.navigate(['/']);
+  onSubmit() 
+  {
+    console.log('entro');
+
+
+    alert('ADD \n\n' + 'function addAsignatura()' + JSON.stringify( this.form.value, null, 4));
+    if(this.form.status === 'VALID'){
+      console.log('llamar al servicio');
+      alert('llamar al servicio');
+      //this.router.navigate(['/']);
+    } else {
+      alert('No valido');
+    }
   }
 }

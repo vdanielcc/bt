@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import {Form, FormBuilder, FormControl, FormGroup, UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { fadeInUp400ms } from '../../../../../@vex/animations/fade-in-up.animation';
@@ -15,7 +15,11 @@ import { fadeInUp400ms } from '../../../../../@vex/animations/fade-in-up.animati
 })
 export class LoginComponent implements OnInit {
 
-  form: UntypedFormGroup;
+  public simpleEmailPattern = '^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$';
+
+  form!: FormGroup;
+
+  //form: UntypedFormGroup;
 
   inputType = 'password';
   visible = false;
@@ -28,12 +32,12 @@ export class LoginComponent implements OnInit {
 
   ngOnInit() {
     this.form = this.fb.group({
-      email: ['', Validators.required],
+      email: [null, [Validators.required , Validators.pattern(this.simpleEmailPattern) ]],
       password: ['', Validators.required]
     });
   }
 
-  send() {
+  onSubmit() {
     this.router.navigate(['/']);
     this.snackbar.open('Lucky you! Looks like you didn\'t need a password or email address! For a real application we provide validators to prevent this. ;)', 'LOL THANKS', {
       duration: 10000

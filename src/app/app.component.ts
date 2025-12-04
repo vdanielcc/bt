@@ -143,6 +143,147 @@ export class AppComponent {
       },
       {
         type: 'subheading',
+        label: 'BT',
+        children: [
+          {
+            type: 'dropdown',
+            label: 'Institución',
+            icon: 'mat:date_range',
+            children: [
+              {
+                type: 'link',
+                label: 'Datos Institución',
+                route: '/apps/help-center/getting-started'
+              },
+              {
+                type: 'link',
+                label: 'Escuelas (Dojo)',
+                route: '/apps/help-center/getting-started'
+              },
+              {
+                type: 'link',
+                label: 'Disciplinas',
+                route: '/apps/help-center/pricing'
+              },
+              {
+                type: 'link',
+                label: 'Instructores',
+                route: '/apps/help-center/faq'
+              },
+              {
+                type: 'link',
+                label: 'Clases',
+                route: '/apps/help-center/faq'
+              }
+            ]
+          },
+          {
+            type: 'link',
+            label: 'Alumno',
+            route: '/apps/calendar',
+            icon: 'mat:person_outline',
+            badge: {
+              value: '12',
+              bgClass: 'bg-deep-purple',
+              textClass: 'text-deep-purple-contrast',
+            },
+          },
+          {
+            type: 'dropdown',
+            label: 'Eventos',
+            icon: 'mat:date_range',
+            children: [
+              {
+                type: 'link',
+                label: 'Seminarios',
+                route: '/apps/help-center/getting-started'
+              },
+              {
+                type: 'link',
+                label: 'Exámenes',
+                route: '/apps/help-center/pricing'
+              },
+              {
+                type: 'link',
+                label: 'Torneos',
+                route: '/apps/help-center/faq'
+              }
+            ]
+          },
+          {
+            type: 'link',
+            label: 'Chat',
+            route: '/apps/chat',
+            icon: 'mat:chat',
+            badge: {
+              value: '16',
+              bgClass: 'bg-cyan',
+              textClass: 'text-cyan-contrast',
+            },
+          },
+          {
+            type: 'link',
+            label: 'Mailbox',
+            route: '/apps/mail',
+            icon: 'mat:mail',
+          },
+          {
+            type: 'dropdown',
+            label: 'Social',
+            icon: 'mat:person_outline',
+            children: [
+              {
+                type: 'link',
+                label: 'Profile',
+                route: '/apps/social',
+                routerLinkActiveOptions: { exact: true }
+              },
+              {
+                type: 'link',
+                label: 'Timeline',
+                route: '/apps/social/timeline'
+              },
+            ]
+          },
+          {
+            type: 'link',
+            label: 'WYSIWYG Editor',
+            route: '/apps/editor',
+            icon: 'mat:chrome_reader_mode'
+          },
+          {
+            type: 'dropdown',
+            label: 'Contacts',
+            icon: 'mat:contacts',
+            children: [
+              {
+                type: 'link',
+                label: 'List - Grid',
+                route: '/apps/contacts/grid',
+              },
+              {
+                type: 'link',
+                label: 'List - Table',
+                route: '/apps/contacts/table',
+              }
+            ]
+          },
+          {
+            type: 'link',
+            label: 'Scrumboard',
+            route: '/apps/scrumboard',
+            icon: 'mat:assessment',
+            badge: {
+              value: 'NEW',
+              bgClass: 'bg-primary',
+              textClass: 'text-primary-contrast',
+            }
+          },
+        ]
+      },
+
+      {
+        type: 'subheading',
         label: 'Apps',
         children: [
           {
