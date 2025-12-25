@@ -57,7 +57,8 @@
               "lodash.memoize",
               "lodash.throttle",
               "luxon",
-              "quill"
+              "quill",
+              "seedrandom"
             ],
             "vendorChunk": true,
             "extractLicenses": false,
@@ -68,12 +69,6 @@
           },
           "configurations": {
             "production": {
-              "fileReplacements": [
-                {
-                  "replace": "src/environments/environment.ts",
-                  "with": "src/environments/environment.prod.ts"
-                }
-              ],
               "optimization": true,
               "outputHashing": "all",
               "sourceMap": false,
@@ -84,7 +79,7 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "3mb",
+                  "maximumWarning": "4mb",
                   "maximumError": "5mb"
                 }
               ]
@@ -94,18 +89,18 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "browserTarget": "vex:build"
+            "buildTarget": "vex:build"
           },
           "configurations": {
             "production": {
-              "browserTarget": "vex:build:production"
+              "buildTarget": "vex:build:production"
             }
           }
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "vex:build"
+            "buildTarget": "vex:build"
           }
         },
         "test": {
@@ -127,8 +122,5 @@
         }
       }
     }
-  },
-  "cli": {
-    "analytics": false
   }
 }

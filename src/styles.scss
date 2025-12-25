@@ -8,7 +8,7 @@
   Example:
 
   :root {
-   --sidenav-background: #333333;
+   --vex-sidenav-background: #333333;
   }
 
   All possible variables can be found in @vex/styles/core or by simply inspecting the element you want to change
@@ -18,13 +18,13 @@
 /**
   Uncomment the below code and adjust the values to fit your colors, the application will automatically adjust
  */
-:root {
-  // --color-primary: blue;
-  // --color-primary-contrast: white;
+html {
+  // --vex-color-primary: blue;
+  // --vex-color-primary-contrast: white;
 
-  // --color-accent: yellow;
-  // --color-accent-contrast: black;
+  // --vex-color-accent: yellow;
+  // --vex-color-accent-contrast: black;
 
-  // --color-warn: yellow;
-  // --color-warn-contrast: black;
+  // --vex-color-warn: yellow;
+  // --vex-color-warn-contrast: black;
 }
