@@ -1,49 +1,104 @@
-# See http://help.github.com/ignore-files/ for more about ignoring files.
+# Dependencias y compilación Angular
+node_modules/
+.angular/
+/dist*/
+/out-tsc/
+/bazel-out/
+.sass-cache/
+/typings/
 
-# compiled output
-# /dist
-/tmp
-/out-tsc
-# Only exists if Bazel was run
-/bazel-out
+# Compilación .NET (también cubierta en backend-production/.gitignore)
+[Bb]in/
+[Oo]bj/
+.tmpbin/
+.tmpobj/
 
-# dependencies
-/node_modules
-
-# profiling files
+# Pruebas, cobertura y perfiles
+coverage/
+TestResults/
+playwright-report/
+test-results/
+*.lcov
+*.trx
+*.coverage
+*.coveragexml
 chrome-profiler-events.json
 speed-measure-plugin.json
+/.kudo-validation/
+/.medal-validation/
+/docs/validation/ci/
 
-# IDEs and editors
-/.idea
+# Archivos temporales y herramientas locales
+tmp/
+.tmp/
+tmp-*/
+.tmp-*/
+.tools-*/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.log
+*.tsbuildinfo
+*.tmp
+*.temp
+connect.lock
+
+# Entregas y copias de compilaciones locales
+/release/
+/.release-*/
+/entregables/
+/bte-front-app-*/
+/bte-frontend-app-*/
+/ARCHIVE/
+/.payment-email-mode-backup/
+/artifacts/frontend-app-*/
+/artifacts/dist*/
+/artifacts/**/node_modules/
+/artifacts/**/*.zip
+/artifacts/**/*.tar
+/artifacts/**/*.tar.gz
+/artifacts/**/*.tgz
+/artifacts/**/*.7z
+
+# Configuración privada y credenciales
+.env
+.env.*
+!.env.example
+!.env.*.example
+**/appsettings.json
+**/appsettings.Production.json
+**/appsettings.Local.json
+**/appsettings.*.Local.json
+!**/appsettings.example.json
+!**/appsettings.*.example.json
+*.pem
+*.key
+*.pfx
+*.p12
+*.publishsettings
+
+# Editores
+.idea/
+.vs/
+*.user
+*.suo
+*.sln.docstates
 .project
 .classpath
 .c9/
 *.launch
 .settings/
 *.sublime-workspace
-
-# IDE - VSCode
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
-.history/*
+.history/
 
-# misc
-/.angular/cache
-/.sass-cache
-/connect.lock
-/coverage
-/libpeerconnection.log
-npm-debug.log
-yarn-error.log
-testem.log
-/typings
-
-# System Files
+# Sistema operativo
 .DS_Store
 Thumbs.db
-
-/ARCHIVE/*
+Desktop.ini
+$RECYCLE.BIN/
