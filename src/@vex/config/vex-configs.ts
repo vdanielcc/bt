@@ -31,8 +31,8 @@ const baseConfig: VexConfig = {
   layout: 'horizontal',
   boxed: false,
   sidenav: {
-    title: 'VEX',
-    imageUrl: 'assets/img/logo/logo.svg',
+    title: 'BTE',
+    imageUrl: 'assets/img/logo/budo-tournaments.png',
     showCollapsePin: true,
     user: {
       visible: true

@@ -1,0 +1,117 @@
+<div class="register-page-scroll w-full bg-pattern flex flex-col items-center">
+  <div @fadeInUp class="card overflow-hidden w-full max-w-md">
+    <div class="p-6 pb-0 flex flex-col items-center justify-center">
+      <div class="fill-current text-center">
+        <img class="w-16" src="assets/img/logo/budo-tournaments.png" />
+      </div>
+    </div>
+
+    <div class="text-center mt-4">
+      <h2 class="title m-0">{{ 'auth.register.title' | translate }}</h2>
+      <h4 class="body-2 text-secondary m-0">{{ 'auth.register.subtitle' | translate }}</h4>
+    </div>
+
+    <div
+      [formGroup]="form"
+      class="p-6 flex flex-col gap-4 flex-auto flex flex-col">
+      <div>
+        <mat-form-field class="flex-1 block">
+          <mat-label>{{ 'auth.register.academyName' | translate }}</mat-label>
+          <input formControlName="firstName" matInput required />
+          <mat-error *ngIf="form.controls['firstName'].hasError('required')">El nombre es obligatorio.</mat-error>
+          <mat-error *ngIf="form.controls['firstName'].hasError('minlength')">Mínimo 3 caracteres.</mat-error>
+        </mat-form-field>
+
+        <mat-form-field class="flex-1 block">
+          <mat-label>{{ 'auth.register.country' | translate }}</mat-label>
+          <mat-select
+            (selectionChange)="onCountryChange($event.value)"
+            formControlName="countryId"
+            [disabled]="!countries.length"
+            required>
+            <mat-option *ngFor="let country of countries" [value]="country.id">
+              {{ country.name }}
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.controls['countryId'].hasError('required')">Selecciona un país.</mat-error>
+        </mat-form-field>
+
+        <mat-form-field class="flex-1 block">
+          <mat-label>{{ 'auth.register.documentType' | translate }}</mat-label>
+          <input formControlName="documentType" matInput readonly required />
+        </mat-form-field>
+
+        <mat-form-field class="flex-1 block">
+          <mat-label>{{ documentConfig.label }}</mat-label>
+          <input
+            (input)="formatDocument()"
+            [attr.inputmode]="documentConfig.inputMode"
+            [maxlength]="documentConfig.maxLength"
+            [placeholder]="documentConfig.placeholder"
+            formControlName="documentNumber"
+            matInput
+            required />
+          <mat-error *ngIf="form.controls['documentNumber'].hasError('required')">El documento es obligatorio.</mat-error>
+          <mat-error *ngIf="form.controls['documentNumber'].hasError('document')">{{ documentConfig.errorMessage }}</mat-error>
+        </mat-form-field>
+
+        <mat-form-field class="flex-1 block">
+          <mat-label>{{ 'auth.register.email' | translate }}</mat-label>
+          <input formControlName="email" matInput required />
+          <mat-error *ngIf="form.controls['email'].hasError('required')">El correo es obligatorio.</mat-error>
+          <mat-error *ngIf="form.controls['email'].hasError('email')">Ingresa un correo válido.</mat-error>
+        </mat-form-field>
+
+        <mat-form-field class="flex-1 block">
+          <mat-label>{{ 'auth.register.password' | translate }}</mat-label>
+          <input
+            [type]="inputType"
+            formControlName="password"
+            matInput
+            required />
+          <button
+            (click)="toggleVisibility()"
+            mat-icon-button
+            matIconSuffix
+            matTooltip="Toggle Visibility"
+            type="button">
+            <mat-icon *ngIf="visible" svgIcon="mat:visibility"></mat-icon>
+            <mat-icon *ngIf="!visible" svgIcon="mat:visibility_off"></mat-icon>
+          </button>
+          <mat-error *ngIf="form.controls['password'].hasError('minlength')">Mínimo 8 caracteres.</mat-error>
+        </mat-form-field>
+
+        <mat-form-field class="flex-1 block">
+          <mat-label>{{ 'auth.register.confirmPassword' | translate }}</mat-label>
+          <input
+            [type]="inputType"
+            formControlName="passwordConfirm"
+            matInput
+            required />
+          <button
+            (click)="toggleVisibility()"
+            mat-icon-button
+            matIconSuffix
+            matTooltip="Toggle Visibility"
+            type="button">
+            <mat-icon *ngIf="visible" svgIcon="mat:visibility"></mat-icon>
+            <mat-icon *ngIf="!visible" svgIcon="mat:visibility_off"></mat-icon>
+          </button>
+        </mat-form-field>
+      </div>
+
+      <div class="flex items-center justify-center">
+        <mat-checkbox class="caption"
+        >{{ 'auth.register.terms' | translate }}</mat-checkbox
+        >
+      </div>
+      <button (click)="send()" [disabled]="submitting" color="primary" mat-raised-button type="button">
+        {{ (submitting ? 'auth.register.submitting' : 'auth.register.submit') | translate }}
+      </button>
+      <p class="text-secondary text-center">
+        ¿Ya tienes una cuenta?<br />
+        <a [routerLink]="['/login']">Inicia sesión aquí</a>
+      </p>
+    </div>
+  </div>
+</div>

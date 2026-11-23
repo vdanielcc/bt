@@ -1,0 +1,14 @@
+:host { display: block; }
+.row-actions { display: flex; align-items: center; gap: 0.5rem; white-space: nowrap; padding: 0.5rem 0; }
+.header-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.header-actions button { background: white; }
+.header-actions button[mat-flat-button] { background: rgb(var(--vex-color-primary-500)); }
+.table-card { min-height: 24rem; }
+.table-toolbar { display: flex; align-items: center; gap: 0.75rem; padding: 1rem 1.5rem; border-bottom: 1px solid var(--vex-divider-color); }
+.table-scroll { overflow-x: auto; }
+.state { min-height: 18rem; display: flex; align-items: center; justify-content: center; gap: 0.75rem; color: var(--vex-text-color-secondary); }
+.state.error { color: var(--vex-color-warn); flex-direction: column; }
+.role-chip { display: inline-flex; border-radius: 999px; padding: 0.25rem 0.65rem; font-size: 0.75rem; font-weight: 600; background: rgb(var(--vex-color-primary-500) / 12%); color: rgb(var(--vex-color-primary-700)); }
+.role-chip.team { background: rgb(var(--vex-color-accent-500) / 15%); }
+.empty-row { text-align: center; padding: 2.5rem; color: var(--vex-text-color-secondary); }
+@media (max-width: 700px) { .table-toolbar { flex-wrap: wrap; } .table-toolbar h2 { width: 100%; } .header-actions button { flex: 1; } }

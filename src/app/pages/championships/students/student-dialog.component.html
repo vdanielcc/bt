@@ -1,0 +1,82 @@
+<h2 mat-dialog-title>{{ title | translate }}</h2>
+<mat-dialog-content>
+  <p *ngIf="data.systemAdmin && data.academyName"><strong>Dojo:</strong> {{ data.academyName }}</p>
+  <div *ngIf="errorMessage" class="dialog-error">{{ errorMessage }}</div>
+  <p *ngIf="loadingDocument">{{ 'Cargando documento de la academia...' | translate }}</p>
+  <button mat-button *ngIf="!loadingDocument && !documentConfiguration && (data.mode === 'student' || data.mode === 'edit')" (click)="loadDocumentConfiguration()">{{ 'Reintentar' | translate }}</button>
+
+  <form *ngIf="data.mode === 'student' || data.mode === 'edit'" [formGroup]="personForm" class="form-grid">
+    <mat-form-field class="full-width">
+      <mat-label>{{ 'País' | translate }}</mat-label>
+      <input matInput [value]="documentConfiguration?.countryName ?? ''" readonly />
+    </mat-form-field>
+    <mat-form-field><mat-label>{{ 'Nombres' | translate }}</mat-label><input matInput formControlName="firstName" /></mat-form-field>
+    <mat-form-field><mat-label>{{ 'Apellidos' | translate }}</mat-label><input matInput formControlName="lastName" /></mat-form-field>
+    <mat-form-field>
+      <mat-label>{{ documentLabel | translate }}</mat-label>
+      <input matInput formControlName="documentNumber" [readonly]="!documentConfiguration"
+        [attr.inputmode]="documentConfiguration?.countryCode === 'BR' ? 'numeric' : 'text'"
+        [placeholder]="documentConfiguration?.countryCode === 'BR' ? '000.000.000-00' : documentConfiguration?.countryCode === 'CL' ? '12.345.678-5' : ''" />
+      <mat-error>{{ documentError | translate }}</mat-error>
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>{{ 'Fecha de nacimiento' | translate }}</mat-label>
+      <input matInput [matDatepicker]="birthDatePicker" [max]="maxBirthDate" formControlName="birthDate" />
+      <mat-datepicker-toggle matIconSuffix [for]="birthDatePicker"></mat-datepicker-toggle>
+      <mat-datepicker #birthDatePicker startView="multi-year"></mat-datepicker>
+      <mat-hint>{{ 'Edad mínima: 3 años.' | translate }}</mat-hint>
+      <mat-error *ngIf="personForm.controls.birthDate.hasError('matDatepickerMax')">{{ 'Debe tener al menos 3 años.' | translate }}</mat-error>
+      <mat-error *ngIf="personForm.controls.birthDate.hasError('required') || personForm.controls.birthDate.hasError('matDatepickerParse')">{{ 'Ingresa una fecha válida.' | translate }}</mat-error>
+    </mat-form-field>
+    <mat-form-field><mat-label>{{ 'Género' | translate }}</mat-label><mat-select formControlName="gender"><mat-option value="F">{{ 'Femenino' | translate }}</mat-option><mat-option value="M">{{ 'Masculino' | translate }}</mat-option></mat-select></mat-form-field>
+    <mat-form-field><mat-label>{{ 'Rol' | translate }}</mat-label><mat-select formControlName="rol"><mat-option value="D">{{ 'Deportista' | translate }}</mat-option><mat-option *ngIf="!data.systemAdmin" value="C">{{ 'Coach' | translate }}</mat-option></mat-select></mat-form-field>
+    <mat-form-field><mat-label>{{ 'Peso (kg)' | translate }}</mat-label><input matInput type="number" formControlName="weight" /></mat-form-field>
+    <mat-form-field><mat-label>{{ 'Estatura (m)' | translate }}</mat-label><input matInput type="number" step="0.01" formControlName="height" /></mat-form-field>
+
+    <ng-container *ngIf="personForm.value.rol !== 'C'">
+      <mat-form-field><mat-label>{{ 'Nivel' | translate }}</mat-label><mat-select formControlName="level"><mat-option value="KYU A">Kyu A</mat-option><mat-option value="KYU B">Kyu B</mat-option></mat-select></mat-form-field>
+      <div class="modalities"><span>{{ 'Modalidades' | translate }}</span><mat-checkbox formControlName="kata">Kata</mat-checkbox><mat-checkbox formControlName="kumite">Kumite</mat-checkbox><mat-checkbox formControlName="paraKarate">Para-Karate</mat-checkbox></div>
+    </ng-container>
+
+  </form>
+
+  <form *ngIf="data.mode === 'team'" [formGroup]="teamForm" class="form-grid single-column">
+    <mat-form-field><mat-label>{{ 'Modalidad del equipo' | translate }}</mat-label><mat-select formControlName="modality"><mat-option value="Kata Equipo Femenino">{{ 'Kata Equipo Femenino' | translate }}</mat-option><mat-option value="Kata Equipo Masculino">{{ 'Kata Equipo Masculino' | translate }}</mat-option><mat-option value="Kata Equipo Mixto">{{ 'Kata Equipo Mixto' | translate }}</mat-option><mat-option value="Kumite Equipo Femenino">{{ 'Kumite Equipo Femenino' | translate }}</mat-option><mat-option value="Kumite Equipo Masculino">{{ 'Kumite Equipo Masculino' | translate }}</mat-option></mat-select></mat-form-field>
+    <mat-form-field><mat-label>{{ 'Integrantes (2 a 5)' | translate }}</mat-label><mat-select multiple formControlName="studentIds"><mat-option *ngFor="let student of teamCandidates" [value]="student.id">{{ student.firstName }} {{ student.lastName }}</mat-option></mat-select><mat-hint>{{ 'Selecciona entre 2 y 5 integrantes compatibles con la modalidad.' | translate }}</mat-hint><mat-error>{{ 'Selecciona entre 2 y 5 integrantes compatibles con la modalidad.' | translate }}</mat-error></mat-form-field>
+  </form>
+
+  <form *ngIf="data.mode === 'attorney'" [formGroup]="attorneyForm" class="form-grid">
+    <mat-form-field><mat-label>{{ 'Nombres' | translate }}</mat-label><input matInput formControlName="firstName" /></mat-form-field>
+    <mat-form-field><mat-label>{{ 'Apellidos' | translate }}</mat-label><input matInput formControlName="lastName" /></mat-form-field>
+    <mat-form-field><mat-label>R.U.N.</mat-label><input matInput formControlName="run" /></mat-form-field>
+    <mat-form-field>
+      <mat-label>{{ 'Fecha de nacimiento' | translate }}</mat-label>
+      <input matInput [matDatepicker]="attorneyBirthDatePicker" formControlName="birthDate" />
+      <mat-datepicker-toggle matIconSuffix [for]="attorneyBirthDatePicker"></mat-datepicker-toggle>
+      <mat-datepicker #attorneyBirthDatePicker startView="multi-year"></mat-datepicker>
+      <mat-error>{{ 'Ingresa una fecha válida.' | translate }}</mat-error>
+    </mat-form-field>
+    <mat-form-field><mat-label>{{ 'Género' | translate }}</mat-label><mat-select formControlName="gender"><mat-option value="F">{{ 'Femenino' | translate }}</mat-option><mat-option value="M">{{ 'Masculino' | translate }}</mat-option></mat-select></mat-form-field>
+    <mat-form-field><mat-label>{{ 'Rol' | translate }}</mat-label><mat-select formControlName="rol"><mat-option value="AP">{{ 'Apoderado' | translate }}</mat-option><mat-option value="AC">{{ 'Acompañante' | translate }}</mat-option></mat-select></mat-form-field>
+    <mat-form-field class="full-width">
+      <mat-label>{{ 'Alumno' | translate }}</mat-label>
+      <input matInput type="text" formControlName="studentId" [matAutocomplete]="studentAutocomplete"
+        [placeholder]="'Buscar por nombre o apellido' | translate" autocomplete="off" />
+      <mat-icon matIconSuffix svgIcon="mat:search"></mat-icon>
+      <mat-autocomplete #studentAutocomplete="matAutocomplete" [displayWith]="displayStudent" autoActiveFirstOption>
+        <mat-option *ngFor="let student of filteredAttorneyStudents" [value]="student.id">
+          {{ student.firstName }} {{ student.lastName }}
+        </mat-option>
+        <mat-option *ngIf="!filteredAttorneyStudents.length" disabled>{{ 'No se encontraron alumnos.' | translate }}</mat-option>
+      </mat-autocomplete>
+      <mat-error>{{ 'Selecciona un alumno de la lista.' | translate }}</mat-error>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close [disabled]="saving">{{ 'Cancelar' | translate }}</button>
+  <button mat-flat-button color="primary" (click)="submit()" [disabled]="saving || ((data.mode === 'student' || data.mode === 'edit') && !documentConfiguration)">
+    <mat-icon *ngIf="!saving" svgIcon="mat:save"></mat-icon>{{ (saving ? 'Guardando...' : 'Guardar') | translate }}
+  </button>
+</mat-dialog-actions>

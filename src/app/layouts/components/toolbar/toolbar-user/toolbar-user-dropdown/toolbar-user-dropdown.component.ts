@@ -7,13 +7,16 @@ import {
 import { MenuItem } from '../interfaces/menu-item.interface';
 import { trackById } from '@vex/utils/track-by';
 import { VexPopoverRef } from '@vex/components/vex-popover/vex-popover-ref';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatRippleModule } from '@angular/material/core';
-import { NgClass, NgFor, NgIf } from '@angular/common';
+import { AsyncPipe, NgClass, NgFor, NgIf } from '@angular/common';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { AuthService } from '../../../../../core/auth/auth.service';
+import { MatDialog } from '@angular/material/dialog';
+import { ImpersonateDialogComponent } from '../../../../../core/auth/impersonate-dialog.component';
 
 export interface OnlineStatus {
   id: 'online' | 'away' | 'dnd' | 'offline';
@@ -37,10 +40,12 @@ export interface OnlineStatus {
     MatRippleModule,
     RouterLink,
     NgClass,
-    NgIf
+    NgIf,
+    AsyncPipe
   ]
 })
 export class ToolbarUserDropdownComponent implements OnInit {
+  currentUser$ = this.authService.currentUser$;
   items: MenuItem[] = [
     {
       id: '1',
@@ -109,10 +114,18 @@ export class ToolbarUserDropdownComponent implements OnInit {
 
   constructor(
     private cd: ChangeDetectorRef,
-    private popoverRef: VexPopoverRef<ToolbarUserDropdownComponent>
+    private popoverRef: VexPopoverRef<ToolbarUserDropdownComponent>,
+    private authService: AuthService,
+    private router: Router,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit() {}
+
+  impersonate(): void {
+    this.close();
+    this.dialog.open(ImpersonateDialogComponent, { width: '560px', maxWidth: '95vw' });
+  }
 
   setStatus(status: OnlineStatus) {
     this.activeStatus = status;
@@ -121,5 +134,17 @@ export class ToolbarUserDropdownComponent implements OnInit {
 
   close() {
     this.popoverRef.close();
+  }
+
+  signOut(): void {
+    this.close();
+    this.authService.logout().subscribe({
+      next: () => this.redirectToLogin(),
+      error: () => this.redirectToLogin()
+    });
+  }
+
+  private redirectToLogin(): void {
+    this.router.navigateByUrl('/login', { replaceUrl: true });
   }
 }

@@ -1,0 +1,9 @@
+.payment-review { padding:24px; margin:24px 0; }
+.academy-select,.reason { width:100%; }
+.totals { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin:16px 0; }
+.totals div { padding:16px; background:#eef2ff; border-radius:8px; }
+.totals strong { display:block; font-size:20px; margin-top:8px; }
+.table-wrap { overflow:auto; } table { width:100%; border-collapse:collapse; } th,td { text-align:left; padding:12px; border-bottom:1px solid #ddd; }
+.transfer { padding:16px 0; border-top:1px solid #ddd; } .transfer-heading { display:flex; gap:20px; flex-wrap:wrap; }
+.error { color:#b91c1c; } .success { color:#166534; } button { margin:4px; }
+@media(max-width:700px) { .totals { grid-template-columns:repeat(2,minmax(0,1fr)); } .payment-review { padding:16px; } }

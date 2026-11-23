@@ -4,7 +4,7 @@
       <div class="dropdown-heading-icon flex items-center justify-center">
         <mat-icon svgIcon="mat:person"></mat-icon>
       </div>
-      <div class="dropdown-heading">David Smith</div>
+      <div class="dropdown-heading">{{ (currentUser$ | async)?.nombreCompleto }}</div>
     </div>
 
     <button
@@ -20,6 +20,9 @@
   </div>
 
   <div class="dropdown-content">
+    <button *ngIf="(currentUser$ | async)?.rol === 'admin'" mat-button type="button" (click)="impersonate()" class="w-full">
+      Ingresar como
+    </button>
     <a
       (click)="close()"
       *ngFor="let item of items; trackBy: trackById"
@@ -58,7 +61,7 @@
         </span>
       </ng-container>
     </button>
-    <a (click)="close()" [routerLink]="['/login']" color="primary" mat-button
+    <a (click)="signOut()" color="primary" mat-button
     >Logout</a
     >
   </div>

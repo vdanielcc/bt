@@ -1,0 +1,25 @@
+<main class="p-6 max-w-6xl mx-auto">
+  <h1 class="text-2xl font-semibold mb-2">Asociaciones deportivas</h1>
+  <p class="text-secondary mb-6">Mantén las nomenclaturas y descripciones disponibles para los eventos.</p>
+  <div *ngIf="loading" class="flex items-center gap-3 p-5"><mat-spinner diameter="32"></mat-spinner> Cargando asociaciones…</div>
+  <div *ngIf="error" class="card p-5 mb-5" role="alert">{{ error }} <button *ngIf="!saving" mat-button (click)="load()">Reintentar carga</button></div>
+  <section *ngIf="!loading" class="card p-5 mb-5">
+    <div class="flex items-center justify-between mb-4"><h2 class="text-xl font-medium">Catálogo</h2><button mat-stroked-button [disabled]="saving" (click)="edit()">Nueva asociación</button></div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left">
+        <thead><tr><th class="p-3">Nomenclatura</th><th class="p-3">Descripción</th><th class="p-3">Acciones</th></tr></thead>
+        <tbody><tr *ngFor="let association of associations" class="border-t"><td class="p-3 font-semibold">{{ association.code }}</td><td class="p-3">{{ association.description }}</td><td class="p-3"><button mat-button color="primary" [disabled]="saving" (click)="edit(association)">Editar</button></td></tr></tbody>
+      </table>
+    </div>
+    <p *ngIf="!associations.length">No hay asociaciones registradas.</p>
+  </section>
+  <form class="card p-6" [formGroup]="form" (ngSubmit)="save()">
+    <h2 class="text-xl font-medium mb-4">{{ selectedCode ? 'Editar asociación' : 'Nueva asociación' }}</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <mat-form-field appearance="outline"><mat-label>Nomenclatura</mat-label><input matInput formControlName="code" maxlength="20" [readonly]="!!selectedCode" required><mat-error>Usa hasta 20 letras, números, guiones o guiones bajos.</mat-error></mat-form-field>
+      <mat-form-field appearance="outline"><mat-label>Descripción</mat-label><input matInput formControlName="description" maxlength="255" required><mat-error>Ingresa una descripción.</mat-error></mat-form-field>
+    </div>
+    <p class="text-secondary text-sm">La nomenclatura se conserva después de crear la asociación para mantener la referencia de los eventos.</p>
+    <div class="flex justify-end mt-6"><button mat-flat-button color="primary" type="submit" [disabled]="saving || loading">{{ saving ? 'Guardando…' : 'Guardar' }}</button></div>
+  </form>
+</main>

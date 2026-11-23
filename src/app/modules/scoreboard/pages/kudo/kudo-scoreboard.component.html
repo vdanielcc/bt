@@ -1,0 +1,52 @@
+<main [class.display]="display" [class.control-desk]="!display">
+  <p *ngIf="demo && !display" role="status">DEMO ? Prueba local. No modifica inscripciones, llaves ni resultados oficiales.</p>
+  <header *ngIf="!display"><h1>KUDO · Chile 2023 · {{name}}</h1><a *ngIf="!demo" mat-button [routerLink]="['/scoreboard/events',eventId,'categories',categoryId,'results']">Resultados de categoría</a></header>
+  <p class="error" role="alert" *ngIf="error">{{error}} <button mat-button (click)="refresh()">Actualizar combate</button></p><p role="status" *ngIf="notice">{{notice}}</p>
+  <div class="tools" *ngIf="!display"><button *ngIf="demo" mat-stroked-button (click)="startDemo()">Reiniciar demo</button><label>{{demo ? 'Encuentro demo' : 'Encuentro oficial'}} <select [(ngModel)]="selected" (change)="select()" [disabled]="busy || restRemaining() > 0"><option *ngFor="let m of matches" [ngValue]="m.id" [disabled]="!hasTwoSides(m)">{{m.label}} · {{m.choices[0]?.name}} / {{m.choices[1]?.name}}</option></select></label><button mat-stroked-button (click)="openDisplay()" [disabled]="!snapshot">Abrir pantalla</button></div>
+  <ng-container *ngIf="snapshot as view">
+    <div class="timing-area">
+    <section class="rest-panel" *ngIf="restRemaining() > 0" role="status"><h2>Descanso antes del round {{view.state.round}}</h2><strong>{{clock(restRemaining())}}</strong><p>El siguiente round se inicia manualmente al terminar el minuto de descanso.</p></section>
+    <p class="round-limit" *ngIf="view.state.round === 3 && remaining() === 0 && !view.state.winner">Se completaron los 3 rounds. Registre la decisión por Hantei; no se permite otro desempate.</p>
+    <section class="timer"><div>ROUND {{view.state.round}} / 3 · {{view.state.round === 1 ? 'Principal' : 'Desempate ' + (view.state.round - 1)}}</div><strong>{{clock(remaining())}}</strong><div>{{remaining() === 0 && !view.state.winner ? 'Pendiente de decisión' : view.state.status}}</div>
+      <div class="tools" *ngIf="!display"><button mat-flat-button (click)="act('START')" [disabled]="busy || restRemaining() > 0 || !!view.state.winner || remaining() === 0">Iniciar / reanudar</button><button mat-stroked-button (click)="act('PAUSE')" [disabled]="busy || restRemaining() > 0 || !!view.state.winner">Pausa manual</button><button mat-flat-button color="primary" (click)="hantei()" [disabled]="busy || restRemaining() > 0 || remaining() > 0 || !!view.state.winner">Ingresar Hantei</button><button mat-stroked-button (click)="promptNextRound(true)" *ngIf="view.state.round < 3 && remaining() === 0 && !view.state.winner" [disabled]="busy || restRemaining() > 0">Preparar round de desempate</button></div>
+      <form class="time-editor" *ngIf="!display" (ngSubmit)="setTime()">
+        <button mat-stroked-button type="button" (click)="adjustTime(-1)" [disabled]="busy || restRemaining() > 0 || !!view.state.startedAt || !!view.state.winner || remaining() === 0" aria-label="Restar un segundo al tiempo restante">−1 s</button>
+        <button mat-stroked-button type="button" (click)="adjustTime(1)" [disabled]="busy || restRemaining() > 0 || !!view.state.startedAt || !!view.state.winner || remaining() > 5998000" aria-label="Sumar un segundo al tiempo restante">+1 s</button>
+        <label>Tiempo restante <input name="remainingTime" type="text" inputmode="text" maxlength="5" placeholder="mm:ss" [(ngModel)]="editedTime" [disabled]="busy || restRemaining() > 0 || !!view.state.startedAt || !!view.state.winner" aria-label="Tiempo restante en minutos y segundos"></label>
+        <button mat-stroked-button type="submit" [disabled]="busy || restRemaining() > 0 || !!view.state.startedAt || !!view.state.winner || !editedTime">Aplicar tiempo</button>
+        <span *ngIf="view.state.startedAt">Pause el combate para editar</span>
+      </form>
+    </section>
+    <aside class="ground-control" aria-label="Ne-waza global del encuentro">
+      <div class="ground" [class.expired]="groundStartedAt() && ground() === 0">Ne-waza {{groundCount()}} / 2 · {{clock(ground())}}</div>
+      <p>Máximo 2 por encuentro</p>
+      <div class="tools" *ngIf="!display">
+        <button mat-flat-button (click)="act('GROUND_START')" [disabled]="busy || restRemaining() > 0 || !!view.state.winner || !view.state.startedAt || remaining() === 0 || !!groundStartedAt() || groundCount() >= 2">Iniciar Ne-waza</button>
+        <button mat-stroked-button (click)="act('GROUND_END')" [disabled]="busy || restRemaining() > 0 || !!view.state.winner || !groundStartedAt()">Terminar Ne-waza</button>
+      </div>
+    </aside>
+    </div>
+    <section class="fighters"><article *ngFor="let side of sides" [class.ao]="side === 'AKA'" [class.shiro]="side === 'SHIRO'">
+      <h2>{{sideLabel(side)}} · {{competitor(side)}}</h2><strong class="points">{{total(side)}}</strong><p>Koka {{fighter(side).koka}} · Double Koka {{fighter(side).doubleKoka}} · Yuko {{fighter(side).yuko}} · Waza-ari {{fighter(side).wazaAri}}</p>
+      <p>Ippon {{fighter(side).ippon + (fighter(side === 'AKA' ? 'SHIRO' : 'AKA').hansoku >= 4 || fighter(side === 'AKA' ? 'SHIRO' : 'AKA').shikkaku ? 1 : 0)}} · Hansoku {{fighter(side).hansoku}} / 4 {{fighter(side).shikkaku ? '· SHIKKAKU' : ''}}</p>
+      <p>Por faltas del rival: Yuko {{fighter(side === 'AKA' ? 'SHIRO' : 'AKA').hansoku >= 2 ? 1 : 0}} · Waza-ari {{fighter(side === 'AKA' ? 'SHIRO' : 'AKA').hansoku >= 3 ? 1 : 0}}</p>
+      <div *ngIf="!display" class="controls">
+        <div class="scoring-actions">
+          <div class="award" *ngFor="let a of awards"><button mat-flat-button (click)="act('ADD_AWARD',side,a.code)" [disabled]="busy || restRemaining() > 0 || !!view.state.winner">+ {{a.name}}</button><button mat-stroked-button (click)="act('REMOVE_AWARD',side,a.code)" [disabled]="busy || restRemaining() > 0">− {{a.name}}</button></div>
+        </div>
+        <div class="bout-actions">
+        <div class="incapacity"><label>Incapacidad (segundos) <input type="number" min="2" max="3600" step="0.1" [(ngModel)]="incapacity[side]" [disabled]="busy || restRemaining() > 0"></label><button mat-stroked-button (click)="act('KNOCKDOWN',side,undefined,undefined,incapacity[side])" [disabled]="busy || restRemaining() > 0 || !!view.state.winner">Asignar por incapacidad</button></div>
+        <div class="tools"><button mat-flat-button (click)="act('ADD_HANSOKU',side)" [disabled]="busy || restRemaining() > 0 || !!view.state.winner">+ Hansoku</button><button mat-stroked-button (click)="act('REMOVE_HANSOKU',side)" [disabled]="busy || restRemaining() > 0 || !fighter(side).hansoku">Corregir Hansoku</button></div>
+        <label>Causa de Shikkaku <select [(ngModel)]="reason[side]" [disabled]="busy || restRemaining() > 0"><option value="">Seleccione</option><option *ngFor="let r of reasons" [value]="r.code">{{r.name}}</option></select></label>
+        <div class="tools"><button mat-flat-button color="warn" (click)="act('SHIKKAKU',side,undefined,reason[side])" [disabled]="busy || restRemaining() > 0 || !reason[side] || !!view.state.winner">Shikkaku directo</button><button mat-stroked-button (click)="act('REMOVE_SHIKKAKU',side)" [disabled]="busy || restRemaining() > 0 || !fighter(side).shikkaku">Corregir Shikkaku</button></div>
+        </div>
+        <details class="rule-help"><summary>Referencia de puntuación</summary><p>Koka: golpe limpio sin caída, proyección fuerte o derribo + Kime (≥ 2 golpes). Double Koka: proyección limpia + Kime (&gt; 2 golpes). Ippon: KO o rendición permitida.</p></details>
+      </div>
+    </article></section>
+    <section class="result" [class.ao-winner]="view.state.winner === 'AKA'" [class.shiro-winner]="view.state.winner === 'SHIRO'" *ngIf="view.state.winner">Ganador: {{sideLabel(view.state.winner)}} · {{competitor(view.state.winner)}} · {{view.state.decision}}<div class="tools" *ngIf="!display"><button mat-flat-button color="primary" (click)="publish()" [disabled]="busy || restRemaining() > 0">{{demo ? 'Confirmar resultado demo' : 'Confirmar resultado en la llave'}}</button><button mat-stroked-button *ngIf="view.state.decision === 'HANTEI'" (click)="act('CLEAR_HANTEI')" [disabled]="busy || restRemaining() > 0">Corregir Hantei</button></div></section>
+    <div class="tools encounter-navigation" *ngIf="!display"><button mat-flat-button color="primary" (click)="nextEncounter()" [disabled]="!canAdvance">Siguiente encuentro</button><span *ngIf="!view.officialWinnerCompetitorId">Confirme el resultado para avanzar.</span></div>
+    <pre *ngIf="!display">{{(view.state.lastAction || '').split('AKA').join('AO')}}</pre>
+  </ng-container>
+  <section class="category-podium" *ngIf="progress?.complete" aria-label="Podio de la categoría"><h2>Categoría finalizada · Podio</h2><div class="podium-awards"><article *ngFor="let award of progress?.awards" [attr.data-medal]="award.medal"><h3>{{medalLabel(award.medal)}}</h3><strong>{{award.name}}</strong><p>{{award.academy}}</p></article></div></section>
+  <details *ngIf="!display"><summary>Configuración de la categoría</summary><p>Se aplica a los combates sin acciones registradas.</p><label><input type="checkbox" [(ngModel)]="config.preserveScores" [disabled]="busy || restRemaining() > 0"> Mantener puntajes entre rounds</label><label><input type="checkbox" [(ngModel)]="config.preserveFouls" [disabled]="busy || restRemaining() > 0"> Mantener faltas entre rounds</label><button mat-stroked-button (click)="configure()" [disabled]="busy || restRemaining() > 0">Guardar configuración</button></details>
+</main>

@@ -42,7 +42,7 @@
 
 <ng-container *ngIf="isDropdown(item)">
   <div
-    (click)="toggleOpen()"
+    (click)="toggleOpen($event)"
     [class.vex-sidenav-item--active]="isOpen || isActive"
     [class.vex-sidenav-item--open]="isOpen"
     class="vex-sidenav-item"

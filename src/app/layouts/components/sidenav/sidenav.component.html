@@ -9,7 +9,7 @@
       <img
         [src]="imageUrl$ | async"
         alt="Logo"
-        class="w-6 select-none flex-none" />
+        class="sidenav-logo w-6 select-none flex-none" />
       <h2 class="vex-sidenav-toolbar__headline flex-auto">
         {{ title$ | async }}
       </h2>
@@ -18,15 +18,15 @@
         *ngIf="showCollapsePin$ | async"
         class="vex-sidenav-toolbar__collapse-toggle -mr-4 leading-none flex-none hidden lg:block"
         mat-icon-button
+        [attr.aria-label]="collapsed ? 'Mostrar menú lateral' : 'Ocultar menú lateral'"
+        [title]="collapsed ? 'Mostrar menú lateral' : 'Ocultar menú lateral'"
         type="button">
         <mat-icon
           *ngIf="!collapsed"
-          class="icon-xs"
-          svgIcon="mat:radio_button_checked"></mat-icon>
+          svgIcon="mat:keyboard_double_arrow_left"></mat-icon>
         <mat-icon
           *ngIf="collapsed"
-          class="icon-xs"
-          svgIcon="mat:radio_button_unchecked"></mat-icon>
+          svgIcon="mat:keyboard_double_arrow_right"></mat-icon>
       </button>
     </div>
 
@@ -67,6 +67,7 @@
     *ngIf="userVisible$ | async"
     class="vex-sidenav-user__container flex-none">
     <div
+      *ngIf="currentUser$ | async as user"
       #userProfileMenuOriginRef
       (click)="openProfileMenu(userProfileMenuOriginRef)"
       [class.vex-sidenav-user--open]="userMenuOpen$ | async"
@@ -74,12 +75,14 @@
       matRipple
       matRippleColor="var(--vex-sidenav-item-ripple-color)">
       <img
-        alt="User Avatar"
+        alt="Logo de la academia"
         class="vex-sidenav-user__image flex-none"
-        src="../../../../assets/img/avatars/1.jpg" />
+        style="object-fit: contain"
+        [src]="(academyLogo$ | async) || defaultAcademyLogo"
+        (error)="onAcademyLogoError($event)" />
       <div class="vex-sidenav-user__content flex-auto">
-        <div class="vex-sidenav-user__title">David Smith</div>
-        <div class="vex-sidenav-user__subtitle">Product Manager</div>
+        <div class="vex-sidenav-user__title">{{ user.nombreCompleto }}</div>
+        <div class="vex-sidenav-user__subtitle">{{ (user.rol || 'Usuario') | translate }}</div>
       </div>
       <mat-icon
         class="vex-sidenav-user__dropdown-icon flex-none"

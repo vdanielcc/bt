@@ -1,0 +1,24 @@
+import {Component,OnInit} from '@angular/core';
+import {CommonModule} from '@angular/common';
+import {FormsModule} from '@angular/forms';
+import {MatTabsModule} from '@angular/material/tabs';
+import {MatButtonModule} from '@angular/material/button';
+import {MatCheckboxModule} from '@angular/material/checkbox';
+import {MatPaginatorModule} from '@angular/material/paginator';
+import {NotificationManagementService,NotificationCapabilities,NotificationInbox} from '../services/notification-management.service';
+@Component({selector:'bte-notification-inbox',standalone:true,imports:[CommonModule,FormsModule,MatTabsModule,MatButtonModule,MatCheckboxModule,MatPaginatorModule],template:`
+<h1>Mis notificaciones</h1><p role="alert" *ngIf="error">{{error}}</p><mat-tab-group *ngIf="cap">
+<mat-tab label="Recibidas" *ngIf="has('notification.view')"><div class="toolbar"><button mat-stroked-button (click)="load()">Actualizar</button><button mat-button (click)="readAll()" [disabled]="!inbox.unreadCount">Marcar todas como leídas</button><span>{{inbox.unreadCount}} sin leer</span></div><article *ngFor="let n of inbox.items"><h2>{{n.title}} <small *ngIf="!n.readAt">Sin leer</small></h2><small>{{n.academyName||'BTE'}}</small><time>{{n.createdAt|date:'medium'}}</time><p>{{n.message}}</p><button mat-button *ngIf="!n.readAt" (click)="read(n.id)">Marcar como leída</button></article><p *ngIf="!inbox.items.length">No tienes notificaciones.</p><mat-paginator [length]="inbox.total" [pageSize]="25" [hidePageSize]="true" [pageIndex]="page-1" (page)="page=$event.pageIndex+1;load()"/></mat-tab>
+<mat-tab label="Preferencias" *ngIf="has('notification.preference.view')"><p>Preferencias generales para tu propia cuenta. WhatsApp requiere consentimiento explícito. Los canales no disponibles no realizan envíos.</p><div class="scroll"><table><thead><tr><th>Tipo</th><th *ngFor="let c of cap.channels">{{c.channel}}<small *ngIf="!c.configured">No disponible</small></th></tr></thead><tbody><tr *ngFor="let e of cap.events"><th>{{label(e)}}</th><td *ngFor="let c of cap.channels"><mat-checkbox [attr.aria-label]="e+' '+c.channel" [(ngModel)]="preferences[e+':'+c.channel]" [disabled]="!has('notification.preference.update')"/></td></tr></tbody></table></div><button mat-flat-button color="primary" *ngIf="has('notification.preference.update')" (click)="save()">Guardar preferencias</button><p role="status">{{saved}}</p></mat-tab></mat-tab-group>`,styles:[`:host{display:block;padding:24px}h1{font-size:26px}h2{font-size:19px}article{border-bottom:1px solid #d1d5db;padding:16px}small{display:block}.toolbar{display:flex;gap:16px;align-items:center;margin:16px 0}.scroll{overflow:auto}td,th{padding:12px;text-align:left}`]})
+export class NotificationInboxComponent implements OnInit {
+ cap:NotificationCapabilities|null=null;inbox:NotificationInbox={items:[],total:0,unreadCount:0,page:1,pageSize:25};page=1;preferences:Record<string,boolean>={};error='';saved='';
+ constructor(private service:NotificationManagementService){}
+ has(p:string):boolean{return this.cap?.permissions.includes(p)??false;}
+ label(event:string):string{return notificationEventLabels[event]||event;}
+ ngOnInit():void{this.service.capabilities().subscribe({next:c=>{this.cap=c;for(const e of c.events)for(const ch of c.channels)this.preferences[e+':'+ch.channel]=ch.channel!=='WHATSAPP';if(this.has('notification.view'))this.load();if(this.has('notification.preference.view'))this.service.apiGet<any[]>('me/notification-preferences').subscribe({next:rows=>{for(const p of rows)if(p.academyId==null)this.preferences[p.notificationType+':'+p.channel]=p.isEnabled;},error:()=>this.error='No fue posible cargar preferencias.'});},error:()=>this.error='No fue posible cargar permisos.'});}
+ load():void{this.service.mine(this.page).subscribe({next:r=>this.inbox=r,error:()=>this.error='No fue posible cargar notificaciones.'});}
+ read(id:number):void{this.service.apiWrite(`notifications/${id}/read`,{}).subscribe({next:()=>this.load(),error:()=>this.error='No fue posible marcar la notificación.'});}
+ readAll():void{this.service.apiWrite('notifications/read-all',{}).subscribe({next:()=>this.load(),error:()=>this.error='No fue posible actualizar las notificaciones.'});}
+ save():void{if(!this.cap)return;const preferences=this.cap.events.flatMap(e=>this.cap!.channels.map(c=>({academyId:null,notificationType:e,channel:c.channel,isEnabled:this.preferences[e+':'+c.channel]})));this.service.apiWrite('me/notification-preferences',{preferences},'PUT').subscribe({next:()=>this.saved='Preferencias guardadas.',error:e=>this.error=e?.error?.message||'No fue posible guardar.'});}
+}
+export const notificationEventLabels:Record<string,string>={PAYMENT_CONFIRMED:'Pago confirmado',PAYMENT_REFUNDED:'Pago reembolsado',CHARGE_DUE_SOON:'Cargo próximo a vencer',CHARGE_OVERDUE:'Cargo vencido',CLASS_REMINDER:'Recordatorio de clase',SESSION_CANCELLED:'Sesión cancelada',GRADE_PROMOTED:'Promoción de grado'};

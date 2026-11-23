@@ -1,3 +1,10 @@
+<div *ngIf="auth.impersonating" class="impersonation-banner px-4 py-2 bg-amber-100 text-black flex items-center gap-2" role="status">
+  <span class="truncate flex-1">Ingresando como {{ auth.getCurrentUser()?.nombreCompleto }} · Academia #{{ auth.getCurrentUser()?.academieId }}</span>
+  <button mat-button type="button" [disabled]="returning || auth.refreshing" (click)="returnToAdministrator()">
+    {{ returning ? 'Volviendo…' : 'Volver a administrador' }}
+  </button>
+</div>
+<p *ngIf="returnError" role="alert">{{ returnError }}</p>
 <div
   [class.container]="isVerticalLayout$ | async"
   class="toolbar text-default w-full px-6 flex items-center">
@@ -16,7 +23,7 @@
     <img
       alt="Logo"
       class="w-8 select-none"
-      src="assets/img/logo/logo.svg" />
+      src="assets/img/logo/budo-tournaments.png" />
     <h1
       [class.hidden]="isDesktop$ | async"
       class="text-2xl font-bold tracking-wide ltr:pl-4 rtl:pr-4 m-0 select-none">
@@ -24,72 +31,17 @@
     </h1>
   </a>
 
-  <button
+  <a
     *ngIf="isHorizontalLayout$ | async"
     [class.hidden]="!(isDesktop$ | async)"
-    [matMenuTriggerFor]="addNewMenu"
-    color="primary"
+    class="support-button"
+    href="https://api.whatsapp.com/send?phone=56973329100&text=Hola,%20necesito%20ayuda%20con%20el%20uso%20del%20sistema"
     mat-flat-button
-    type="button">
-    Add New
-  </button>
-
-  <mat-menu
-    #addNewMenu="matMenu"
-    [overlapTrigger]="false"
-    xPosition="after"
-    yPosition="below">
-    <button mat-menu-item>
-      <mat-icon svgIcon="mat:person_add"></mat-icon>
-      <span>Add Contact</span>
-    </button>
-
-    <button mat-menu-item>
-      <mat-icon svgIcon="mat:done_all"></mat-icon>
-      <span>Add Task</span>
-    </button>
-
-    <button mat-menu-item>
-      <mat-icon svgIcon="mat:assignment_turned_in"></mat-icon>
-      <span>Add Project</span>
-    </button>
-
-    <button [matMenuTriggerFor]="documentMenu" mat-menu-item>
-      <mat-icon svgIcon="mat:ballot"></mat-icon>
-      <span>Add Document</span>
-    </button>
-  </mat-menu>
-
-  <mat-menu #documentMenu="matMenu">
-    <button mat-menu-item>
-      <mat-icon svgIcon="mat:description"></mat-icon>
-      <span>Add Quote</span>
-    </button>
-
-    <button mat-menu-item>
-      <mat-icon svgIcon="mat:assignment"></mat-icon>
-      <span>Add Invoice</span>
-    </button>
-
-    <button mat-menu-item>
-      <mat-icon svgIcon="mat:receipt"></mat-icon>
-      <span>Add Receipt</span>
-    </button>
-  </mat-menu>
-
-  <div #megaMenuOriginRef class="ltr:ml-2 rtl:mr-2">
-    <button
-      (click)="openMegaMenu(megaMenuOriginRef)"
-      *ngIf="isHorizontalLayout$ | async"
-      [class.hidden]="!(isDesktop$ | async)"
-      [ngClass]="{ 'bg-primary-600/10': megaMenuOpen$ | async }"
-      color="primary"
-      mat-button
-      type="button">
-      <span>Mega Menu</span>
-      <mat-icon class="icon-sm" svgIcon="mat:arrow_drop_down"></mat-icon>
-    </button>
-  </div>
+    rel="noopener noreferrer"
+    target="_blank">
+    <mat-icon class="support-button__icon" svgIcon="logo:whatsapp"></mat-icon>
+    {{ 'Soporte' | translate }}
+  </a>
 
   <div
     *ngIf="(isVerticalLayout$ | async) && (isNavbarInToolbar$ | async)"
@@ -121,7 +73,7 @@
 
     <div class="px-1">
       <button [matMenuTriggerFor]="languageMenu" mat-icon-button type="button">
-        <mat-icon svgIcon="flag:united-states"></mat-icon>
+        <mat-icon [svgIcon]="activeLanguage.flag"></mat-icon>
       </button>
     </div>
 
@@ -134,14 +86,13 @@
       overlapTrigger="false"
       xPosition="before"
       yPosition="below">
-      <button mat-menu-item>
-        <mat-icon svgIcon="flag:united-states"></mat-icon>
-        <span>English</span>
-      </button>
-
-      <button mat-menu-item>
-        <mat-icon svgIcon="flag:germany"></mat-icon>
-        <span>German</span>
+      <button
+        (click)="selectLanguage(language)"
+        *ngFor="let language of languages"
+        mat-menu-item>
+        <mat-icon [svgIcon]="language.flag"></mat-icon>
+        <span>{{ language.label }}</span>
+        <mat-icon *ngIf="language === activeLanguage" svgIcon="mat:check"></mat-icon>
       </button>
     </mat-menu>
   </div>

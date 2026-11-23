@@ -1,4 +1,5 @@
-<button
+<button *ngIf="canView"
+  [matBadge]="unread" [matBadgeHidden]="!unread" matBadgeSize="small" aria-label="Mis notificaciones"
   #originRef
   (click)="showPopover()"
   [class.bg-hover]="dropdownOpen"

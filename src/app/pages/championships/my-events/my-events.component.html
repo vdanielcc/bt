@@ -1,0 +1,17 @@
+<vex-page-layout>
+  <vex-page-layout-header class="pb-16 flex flex-col items-start justify-center"><div class="container w-full"><h1 class="title mt-0 mb-1">{{ 'Mis Eventos' | translate }}</h1><vex-breadcrumbs [crumbs]="['Campeonatos' | translate, 'Eventos' | translate, 'Mis Eventos' | translate]"></vex-breadcrumbs></div></vex-page-layout-header>
+  <vex-page-layout-content class="container -mt-6">
+    <div *ngIf="loading" class="state"><mat-spinner diameter="44"></mat-spinner><span>{{ 'Cargando mis eventos...' | translate }}</span></div>
+    <div *ngIf="!loading && loadError" class="state error"><mat-icon svgIcon="mat:error_outline"></mat-icon><h2>{{ 'No pudimos cargar tus eventos' | translate }}</h2><button mat-flat-button color="primary" (click)="loadEvents()"><mat-icon svgIcon="mat:refresh"></mat-icon>{{ 'Reintentar' | translate }}</button></div>
+    <div *ngIf="!loading && !loadError && !events.length" class="state"><mat-icon svgIcon="mat:event_busy"></mat-icon><h2>{{ 'No tienes eventos registrados' | translate }}</h2></div>
+    <div *ngIf="!loading && !loadError && events.length" class="events-grid">
+      <mat-card *ngFor="let event of events; trackBy: trackById" class="event-card">
+        <div class="card-title">{{ event.name }}</div>
+        <div class="poster"><img [src]="event.poster" [alt]="event.name" (error)="onPosterError($event)"></div>
+        <mat-card-content><h2>{{ event.name }}</h2><div class="event-data" *ngIf="event.eventDateStart"><mat-icon svgIcon="mat:event"></mat-icon><span>{{ event.eventDateStart | date:'dd/MM/yyyy HH:mm' }}</span></div><div class="event-data" *ngIf="event.eventLocation"><mat-icon svgIcon="mat:location_on"></mat-icon><span>{{ event.eventLocation }}</span></div></mat-card-content>
+        <mat-card-actions><a mat-flat-button color="primary" [routerLink]="['/campeonatos/mis-eventos', event.id, 'resumen']"><mat-icon svgIcon="mat:dashboard"></mat-icon>{{ 'Ver Resumen' | translate }}</a></mat-card-actions>
+        <mat-card-actions><a mat-button [routerLink]="['/medallero', event.id]">Medallero</a><a mat-button [routerLink]="['/medallero', event.id, 'pantalla']" target="_blank" rel="noopener">Pantalla externa</a></mat-card-actions>
+      </mat-card>
+    </div>
+  </vex-page-layout-content>
+</vex-page-layout>

@@ -1,0 +1,189 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.invitations-shell {
+  min-height: 18rem;
+}
+
+.events-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: 1.5rem;
+  padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+}
+
+.event-card {
+  min-width: 0;
+  overflow: hidden;
+  border-top: 4px solid rgb(var(--vex-color-primary-500));
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .event-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 14%);
+  }
+}
+
+.event-card--closed {
+  border-top-color: #ef4444;
+}
+
+.poster-wrap {
+  position: relative;
+  background: var(--vex-background-background);
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+}
+
+.poster-wrap img {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  object-fit: contain;
+}
+
+.poster-wrap img.poster-unavailable {
+  visibility: hidden;
+}
+
+.status-chip {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  color: white;
+  background: rgb(var(--vex-color-primary-600));
+  font-size: 0.75rem;
+  font-weight: 600;
+  max-width: calc(100% - 1.5rem);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.event-card--closed .status-chip {
+  color: #991b1b;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+}
+
+mat-card-header {
+  padding: 1.25rem 1.25rem 0.5rem;
+}
+
+mat-card-title {
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+mat-card-content {
+  padding: 0.75rem 1.25rem;
+  flex: 1;
+}
+
+.event-data {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+  color: var(--vex-text-color-secondary);
+}
+
+.event-data mat-icon {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+}
+
+.event-data span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+mat-card-actions {
+  padding: 0 1.25rem 1.25rem;
+}
+
+.details-button {
+  width: 100%;
+  min-height: 48px;
+  height: auto;
+  padding-block: 0.75rem;
+  white-space: normal;
+}
+
+.state-panel {
+  min-height: 20rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  text-align: center;
+  padding: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.state-panel button {
+  min-height: 48px;
+}
+
+.state-panel > mat-icon {
+  width: 48px;
+  height: 48px;
+  font-size: 48px;
+  color: rgb(var(--vex-color-primary-500));
+}
+
+.error-state > mat-icon {
+  color: var(--vex-color-warn);
+}
+
+@media (max-width: 599px) {
+  .invitations-header {
+    height: auto;
+    min-height: 0;
+    padding: 1.25rem 1rem 2.5rem;
+  }
+
+  .invitations-header .container {
+    padding-inline: 0;
+    min-width: 0;
+  }
+
+  .invitations-header h1 {
+    font-size: 1.25rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  .invitations-content {
+    padding-inline: 1rem;
+  }
+
+  .events-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  mat-card-header {
+    padding: 1rem 1rem 0.5rem;
+  }
+
+  mat-card-content {
+    padding: 0.5rem 1rem 1rem;
+  }
+
+  mat-card-actions {
+    padding: 0 1rem 1rem;
+  }
+
+  .state-panel {
+    min-height: 14rem;
+  }
+}

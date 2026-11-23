@@ -1,0 +1,14 @@
+import { CommonModule } from '@angular/common';
+import { GenerationResult } from '../models/billing-charge.models';
+import { Component, Inject } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { finalize } from 'rxjs';
+import { BillingManagementService } from '../services/billing-management.service';
+
+@Component({selector:'bte-monthly-generation-dialog',standalone:true,imports:[CommonModule,ReactiveFormsModule,MatDialogModule,MatButtonModule,MatFormFieldModule,MatInputModule],template:`<h2 mat-dialog-title>Generar mensualidades</h2><mat-dialog-content [formGroup]="form" class="form"><mat-form-field><mat-label>Mes</mat-label><input matInput type="number" min="1" max="12" formControlName="month"></mat-form-field><mat-form-field><mat-label>Año</mat-label><input matInput type="number" min="1900" max="9998" formControlName="year"></mat-form-field><p *ngIf="error" role="alert">{{error}}</p><p *ngIf="result" role="status">{{result.created}} creadas · {{result.existing}} existentes · {{result.skipped}} omitidas</p><p>La API determinará qué mensualidades corresponde generar y omitirá duplicados.</p></mat-dialog-content><mat-dialog-actions align="end"><button mat-button [disabled]="saving" [mat-dialog-close]="result">{{result?'Cerrar':'Cancelar'}}</button><button mat-flat-button color="primary" [disabled]="saving" (click)="generate()">{{saving?'Generando…':'Generar'}}</button></mat-dialog-actions>`,styles:[`.form{display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding-top:.5rem}.form p{grid-column:1/-1;color:var(--vex-text-color-secondary)}`]})
+export class MonthlyGenerationDialogComponent{saving=false;error='';result?:GenerationResult;private now=new Date();form=this.fb.group({month:[this.now.getMonth()+1,[Validators.required,Validators.min(1),Validators.max(12),Validators.pattern(/^\d+$/)]],year:[this.now.getFullYear(),[Validators.required,Validators.min(1900),Validators.max(9998),Validators.pattern(/^\d+$/)]]});constructor(@Inject(MAT_DIALOG_DATA)private data:{academyId:number},private fb:FormBuilder,private service:BillingManagementService,private ref:MatDialogRef<MonthlyGenerationDialogComponent>){}generate():void{if(this.saving||this.form.invalid)return;this.saving=true;this.error='';this.ref.disableClose=true;const value=this.form.getRawValue();this.service.generateMonthly(this.data.academyId,value.month!,value.year!).pipe(finalize(()=>{this.saving=false;this.ref.disableClose=false;})).subscribe({next:result=>{this.result=result;},error:e=>this.error=e.error?.message||'No fue posible generar mensualidades.'});}}
+

@@ -1,0 +1,45 @@
+<h2 mat-dialog-title>{{title}}</h2>
+<form #form="ngForm" (ngSubmit)="save(form.valid===true)">
+<mat-dialog-content class="fields">
+<ng-container *ngIf="data.kind==='system'">
+ <mat-form-field><mat-label>Nombre</mat-label><input matInput name="name" [(ngModel)]="v.name" required maxlength="150"></mat-form-field>
+ <mat-form-field><mat-label>Código</mat-label><input matInput name="code" [(ngModel)]="v.code" required maxlength="50"></mat-form-field>
+ <mat-form-field><mat-label>Estilo de la academia</mat-label><mat-select name="style" [(ngModel)]="v.styleId" required><mat-option *ngFor="let s of data.options?.styles" [value]="s.styleId">{{s.name}}</mat-option></mat-select></mat-form-field>
+ <mat-form-field><mat-label>Asociación opcional</mat-label><mat-select name="association" [(ngModel)]="v.sportsAssociationId"><mat-option [value]="null">Sistema interno</mat-option><mat-option *ngFor="let a of data.options?.associations" [value]="a.id">{{a.name}}</mat-option></mat-select></mat-form-field>
+ <mat-form-field><mat-label>Descripción</mat-label><textarea matInput name="description" [(ngModel)]="v.description" maxlength="1000"></textarea></mat-form-field>
+</ng-container>
+<ng-container *ngIf="data.kind==='level'">
+ <mat-form-field><mat-label>Nombre</mat-label><input matInput name="name" [(ngModel)]="v.name" required maxlength="100"></mat-form-field>
+ <mat-form-field><mat-label>Código</mat-label><input matInput name="code" [(ngModel)]="v.code" required maxlength="30"></mat-form-field>
+ <mat-form-field><mat-label>Orden de progresión</mat-label><input matInput type="number" name="order" [(ngModel)]="v.sortOrder" min="1" step="1" required></mat-form-field>
+ <mat-form-field><mat-label>Tipo (metadato)</mat-label><mat-select name="rankType" [(ngModel)]="v.rankType"><mat-option *ngFor="let t of ['OTHER','KYU','DAN','MON']" [value]="t">{{t}}</mat-option></mat-select></mat-form-field>
+ <mat-form-field><mat-label>Número opcional</mat-label><input matInput type="number" name="number" [(ngModel)]="v.rankNumber" min="0" step="1"></mat-form-field>
+ <mat-form-field><mat-label>Cinturón</mat-label><input matInput name="belt" [(ngModel)]="v.beltName" maxlength="100"></mat-form-field>
+ <mat-form-field><mat-label>Color (#RRGGBB)</mat-label><input matInput name="color" [(ngModel)]="v.beltColorHex" pattern="#[0-9a-fA-F]{6}"></mat-form-field>
+ <mat-form-field><mat-label>Franja (#RRGGBB)</mat-label><input matInput name="stripe" [(ngModel)]="v.stripeColorHex" pattern="#[0-9a-fA-F]{6}"></mat-form-field>
+ <mat-form-field><mat-label>Meses mínimos</mat-label><input matInput type="number" name="months" [(ngModel)]="v.minimumMonthsInPreviousGrade" min="0" step="1" required></mat-form-field>
+ <mat-form-field><mat-label>Clases mínimas</mat-label><input matInput type="number" name="classes" [(ngModel)]="v.minimumClasses" min="0" step="1" required></mat-form-field>
+</ng-container>
+<ng-container *ngIf="data.kind==='profile'">
+ <mat-form-field *ngIf="!data.studentId"><mat-label>Alumno de la academia</mat-label><mat-select name="student" [(ngModel)]="studentId" required><mat-option *ngFor="let s of data.options?.students" [value]="s.id">{{s.name}}</mat-option></mat-select></mat-form-field>
+ <mat-form-field><mat-label>Estilo</mat-label><mat-select name="style" [(ngModel)]="academyStyleId" (selectionChange)="systemId=0;levels=[]" required><mat-option *ngFor="let s of data.options?.styles" [value]="s.academyStyleId">{{s.name}}</mat-option></mat-select></mat-form-field>
+ <mat-form-field><mat-label>Sistema</mat-label><mat-select name="system" [(ngModel)]="systemId" (selectionChange)="loadLevels()" required><mat-option *ngFor="let s of availableSystems" [value]="s.system.id">{{s.system.name}}</mat-option></mat-select></mat-form-field>
+</ng-container>
+<mat-form-field *ngIf="(data.kind==='profile'&&has('grading.student.assign_initial_grade'))||data.kind==='initial'"><mat-label>Grado inicial (puede ser avanzado)</mat-label><mat-select name="initial" [(ngModel)]="initialLevel" [required]="data.kind==='initial'"><mat-option *ngIf="data.kind==='profile'" [value]="null">Sin asignar todavía</mat-option><mat-option *ngFor="let l of levels" [value]="l.id">{{l.sortOrder}} · {{l.name}}</mat-option></mat-select></mat-form-field>
+<ng-container *ngIf="data.profile as p">
+ <p>{{p.studentName}} · {{p.styleName}} · {{p.systemName}}</p>
+ <p>Grado actual: {{p.currentGrade?.name||'Sin grado'}}. Próximo: {{p.nextGrade?.name||'—'}}</p>
+ <p *ngIf="data.kind==='promote'">Tiempo: {{p.monthsInCurrentGrade}} / {{p.minimumMonths}} meses · Clases: {{p.attendedClasses}} / {{p.minimumClasses}}</p>
+ <p *ngIf="data.kind==='promote'&&!p.isEligible">El estudiante aún no cumple los requisitos mínimos.</p>
+ <mat-checkbox *ngIf="data.kind==='promote'&&has('grading.student.promote_override')" name="override" [(ngModel)]="override">Promoción excepcional</mat-checkbox>
+ <mat-form-field *ngIf="override"><mat-label>Motivo obligatorio</mat-label><textarea matInput name="reason" [(ngModel)]="reason" required maxlength="1000"></textarea></mat-form-field>
+</ng-container>
+<mat-form-field *ngIf="['profile','promote','initial'].includes(data.kind)"><mat-label>{{data.kind==='profile'?'Fecha de inicio':'Fecha del grado'}}</mat-label><input matInput type="date" name="date" [(ngModel)]="date" required></mat-form-field>
+<mat-form-field *ngIf="data.kind==='evaluation'||(data.kind==='promote'&&has('grading.evaluation.record'))"><mat-label>Fecha de evaluación</mat-label><input matInput type="date" name="evaluationDate" [(ngModel)]="evaluationDate" [required]="data.kind==='evaluation'"></mat-form-field>
+<mat-form-field *ngIf="data.kind==='evaluation'||(data.kind==='promote'&&has('grading.evaluation.record'))"><mat-label>Puntaje opcional</mat-label><input matInput type="number" step="0.001" name="score" [(ngModel)]="score"></mat-form-field>
+<mat-form-field *ngIf="data.kind==='certificate'||(data.kind==='promote'&&has('grading.certificate.record'))"><mat-label>Certificado</mat-label><input matInput name="certificate" [(ngModel)]="certificate" maxlength="100" [required]="data.kind==='certificate'"></mat-form-field>
+<mat-form-field *ngIf="data.kind!=='system'"><mat-label>Notas</mat-label><textarea matInput name="notes" [(ngModel)]="notes" maxlength="1000"></textarea></mat-form-field>
+<p role="alert" *ngIf="error">{{error}}</p>
+</mat-dialog-content>
+<mat-dialog-actions align="end"><button mat-button type="button" mat-dialog-close>Cancelar</button><button mat-flat-button color="primary" type="submit" [disabled]="saving||!form.valid||(data.kind==='promote'&&(!data.profile?.nextGrade||(!data.profile?.isEligible&&!override)))">{{saving?'Guardando…':'Guardar'}}</button></mat-dialog-actions>
+</form>

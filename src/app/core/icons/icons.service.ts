@@ -4,6 +4,7 @@ import {
   MatIconRegistry,
   SafeResourceUrlWithIconOptions
 } from '@angular/material/icon';
+import { MATERIAL_ICONS } from './material-icons.generated';
 
 @Injectable({
   providedIn: 'root'
@@ -13,6 +14,11 @@ export class IconsService {
     private readonly domSanitizer: DomSanitizer,
     private readonly iconRegistry: MatIconRegistry
   ) {
+    for (const [name, svg] of Object.entries(MATERIAL_ICONS)) {
+      this.iconRegistry.addSvgIconLiteralInNamespace(
+        'mat', name, this.domSanitizer.bypassSecurityTrustHtml(svg)
+      );
+    }
     this.iconRegistry.addSvgIconResolver(
       (
         name: string,

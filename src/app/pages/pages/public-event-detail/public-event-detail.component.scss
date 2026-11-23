@@ -1,0 +1,17 @@
+:host { display: block; min-height: 100%; }
+.public-detail { min-height: 100vh; padding: 1.5rem; background-color: var(--vex-background-background); }
+.detail-header { max-width: 1200px; margin: 0 auto 2rem; display: flex; align-items: center; justify-content: space-between; }
+.detail-header img { width: 3.5rem; height: 3.5rem; object-fit: contain; }
+.detail-container { max-width: 1200px; margin: 0 auto; }
+.title-block { margin-bottom: 1.25rem; }.title-block span { color: rgb(var(--vex-color-primary-600)); text-transform: uppercase; letter-spacing: .1em; font-size: .75rem; font-weight: 700; }.title-block h1 { margin: .25rem 0; font-size: clamp(2rem, 5vw, 3.25rem); line-height: 1.1; }
+.detail-card { overflow: hidden; border-top: 4px solid rgb(var(--vex-color-primary-500)); padding: 1.5rem; }
+.info-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1rem; }
+.poster, .panel, .map { border: 1px solid rgb(0 0 0 / 10%); border-radius: .75rem; background: var(--vex-card-background); }
+.poster { grid-column: span 4; min-height: 18rem; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #f4f5f7; }.poster img { width: 100%; height: 100%; object-fit: contain; }.poster mat-icon { width: 5rem; height: 5rem; font-size: 5rem; color: rgb(var(--vex-color-primary-300)); }
+.panel { grid-column: span 4; padding: 1.25rem; }.panel h2 { display: flex; align-items: center; gap: .5rem; margin: 0 0 1rem; font-size: 1.05rem; color: rgb(var(--vex-color-primary-600)); }
+dl { display: grid; grid-template-columns: 1fr auto; gap: .7rem 1rem; margin: 0; } dt { color: var(--vex-text-color-secondary); } dd { margin: 0; text-align: right; font-weight: 500; }
+.actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }.whatsapp { background: #16a34a !important; color: white !important; }
+.location { grid-column: span 4; }.map { grid-column: span 8; width: 100%; min-height: 330px; }.description { grid-column: span 8; }.prices { grid-column: span 4; }.prices > div { padding: .65rem; border-bottom: 1px solid rgb(0 0 0 / 8%); }.prices a { margin-top: 1rem; width: 100%; }
+.state { min-height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; }
+@media (max-width: 959px) { .poster, .panel, .location, .description, .prices, .map { grid-column: 1 / -1; } .detail-card { padding: 1rem; } }
+@media (max-width: 599px) { .public-detail { padding: 1rem; } dl { grid-template-columns: 1fr; gap: .2rem; } dd { text-align: left; margin-bottom: .65rem; } }

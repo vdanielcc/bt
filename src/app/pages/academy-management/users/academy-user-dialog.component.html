@@ -1,0 +1,52 @@
+<h2 mat-dialog-title>{{ data.user ? 'Editar usuario' : 'Crear usuario' }}</h2>
+<mat-dialog-content>
+  <p *ngIf="data.academyName" class="hint">Academia: <strong>{{ data.academyName }}</strong></p>
+  <fieldset [disabled]="saving" style="border:0;padding:0;margin:0;min-width:0">
+    <ng-container *ngIf="!data.user">
+      <mat-radio-group [formControl]="mode" aria-label="Origen de la persona">
+        <mat-radio-button value="existing">Persona registrada</mat-radio-button>
+        <mat-radio-button value="new">Nueva persona</mat-radio-button>
+      </mat-radio-group>
+      <section *ngIf="mode.value === 'existing'">
+        <p class="hint">Selecciona una persona de la academia que todavía no tenga cuenta de acceso.</p>
+        <mat-form-field appearance="outline"><mat-label>Buscar persona por nombre o documento</mat-label><input matInput [formControl]="search" /></mat-form-field>
+        <p *ngIf="loadingPeople" role="status">Buscando personas…</p>
+        <p *ngIf="peopleError" class="error" role="alert">{{ peopleError }} <button mat-button (click)="retryPeople()">Reintentar</button></p>
+        <mat-form-field appearance="outline"><mat-label>Persona registrada</mat-label><mat-select [formControl]="personId">
+          <mat-option *ngFor="let row of people" [value]="row.id">{{ row.firstName }} {{ row.lastName }} — {{ row.documentNumber }}</mat-option>
+        </mat-select><mat-error>Selecciona una persona.</mat-error></mat-form-field>
+        <p *ngIf="!loadingPeople && !peopleError && !people.length" class="hint">No hay personas sin cuenta que coincidan. Puedes buscar otro nombre o registrar una nueva persona.</p>
+        <p *ngIf="people.length === 50" class="hint">Se muestran hasta 50 personas. Refina la búsqueda si no encuentras a la persona.</p>
+      </section>
+      <section *ngIf="mode.value === 'new'" [formGroup]="person">
+        <p *ngIf="loadingOptions" role="status">Cargando tipos de documento…</p>
+        <p *ngIf="optionsError" class="error" role="alert">{{ optionsError }} <button mat-button (click)="loadOptions()">Reintentar</button></p>
+        <p *ngIf="options" class="hint">País de registro: {{ options.countryName }}. Se utiliza la comuna de la academia.</p>
+        <div class="grid">
+          <mat-form-field appearance="outline"><mat-label>Nombres</mat-label><input matInput formControlName="firstName" maxlength="100" /><mat-error>Ingresa los nombres.</mat-error></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Apellidos</mat-label><input matInput formControlName="lastName" maxlength="100" /><mat-error>Ingresa los apellidos.</mat-error></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Fecha de nacimiento</mat-label><input matInput type="date" formControlName="birthDate" [max]="today" /><mat-error>Ingresa la fecha de nacimiento.</mat-error></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Género</mat-label><mat-select formControlName="gender"><mat-option value="Male">Masculino</mat-option><mat-option value="Female">Femenino</mat-option><mat-option value="Other">Otro</mat-option></mat-select><mat-error>Selecciona el género.</mat-error></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Tipo de documento</mat-label><mat-select formControlName="documentTypeId"><mat-option *ngFor="let type of options?.documentTypes" [value]="type.id">{{ type.name }}</mat-option></mat-select><mat-error>Selecciona el tipo de documento.</mat-error></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Número de documento</mat-label><input matInput formControlName="documentNumber" maxlength="50" /><mat-error>Ingresa el documento.</mat-error></mat-form-field>
+        </div>
+      </section>
+    </ng-container>
+    <p *ngIf="data.user" class="person-name">{{ data.user.firstName }} {{ data.user.lastName }}</p>
+    <div class="grid" [formGroup]="form">
+      <mat-form-field appearance="outline"><mat-label>Correo de acceso</mat-label><input matInput type="email" formControlName="email" maxlength="100" autocomplete="off" /><mat-error>Ingresa un correo válido.</mat-error></mat-form-field>
+      <mat-form-field appearance="outline"><mat-label>Perfil</mat-label><mat-select formControlName="role"><mat-option *ngFor="let role of roles" [value]="role.value">{{ role.label }}</mat-option></mat-select><mat-error>Selecciona un perfil.</mat-error></mat-form-field>
+      <ng-container *ngIf="!data.user">
+        <mat-form-field appearance="outline"><mat-label>Contraseña</mat-label><input matInput [type]="showPassword ? 'text' : 'password'" formControlName="password" autocomplete="new-password" maxlength="72" /><mat-hint>Mínimo 8 caracteres.</mat-hint><mat-error>Usa entre 8 y 72 caracteres.</mat-error></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Confirmar contraseña</mat-label><input matInput [type]="showPassword ? 'text' : 'password'" formControlName="passwordConfirm" autocomplete="new-password" maxlength="72" /><mat-error>Confirma la contraseña.</mat-error></mat-form-field>
+        <mat-checkbox class="full" [checked]="showPassword" (change)="showPassword = $event.checked">Mostrar contraseña</mat-checkbox>
+        <p class="error full" *ngIf="passwordMismatch && form.controls.passwordConfirm.touched">Las contraseñas no coinciden.</p>
+      </ng-container>
+      <mat-checkbox *ngIf="data.user" formControlName="isActive" class="full">Cuenta activa</mat-checkbox>
+    </div>
+    <p *ngIf="data.user" class="hint">Al desactivar la cuenta se bloquea su acceso. Los cambios de perfil se aplican al iniciar sesión nuevamente.</p>
+    <p *ngIf="data.systemAdmin && form.controls.role.value === 'admin'" class="hint">El administrador del sistema tiene acceso a la gestión de usuarios de todas las academias.</p>
+    <p class="error" *ngIf="error" role="alert">{{ error }}</p>
+  </fieldset>
+</mat-dialog-content>
+<mat-dialog-actions align="end"><button mat-button [mat-dialog-close]="false" [disabled]="saving">Cancelar</button><button mat-flat-button color="primary" (click)="save()" [disabled]="saving">{{ saving ? 'Guardando…' : data.user ? 'Guardar cambios' : 'Crear usuario' }}</button></mat-dialog-actions>

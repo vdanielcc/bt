@@ -1,0 +1,37 @@
+<main class="p-6 max-w-6xl mx-auto">
+  <a mat-button routerLink="/admin/events">Volver a eventos</a>
+  <h1 class="text-2xl font-semibold my-4">Categorías · {{ config?.eventName || ('Evento ' + eventId) }}</h1>
+  <p *ngIf="loading" role="status">Cargando categorías…</p>
+  <p *ngIf="error" role="alert" class="card p-4 mb-4 text-red-700">{{ error }} <button *ngIf="!config" mat-button (click)="load()">Reintentar</button></p>
+  <p *ngIf="message" role="status" class="mb-4">{{ message }}</p>
+  <section *ngIf="config && !loading" class="card p-5 mb-5">
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Buscar categoría por código o nombre</mat-label>
+      <input matInput [formControl]="search" [matAutocomplete]="categoryOptions" placeholder="Escribe un código o parte del nombre">
+      <mat-autocomplete #categoryOptions="matAutocomplete" [displayWith]="displayCategory" (optionSelected)="select($event.option.value)">
+        <mat-option *ngFor="let category of filteredCategories" [value]="category">{{ category.code }} — {{ category.name }}</mat-option>
+        <mat-option *ngIf="!filteredCategories.length" disabled>No hay categorías coincidentes.</mat-option>
+      </mat-autocomplete>
+    </mat-form-field>
+    <p *ngIf="!config.categories.length">Este evento no tiene categorías asociadas.</p>
+  </section>
+  <form *ngIf="selected && config && !loading" [formGroup]="form" (ngSubmit)="save()" class="card p-6">
+    <h2 class="text-lg font-medium mb-4">Editar {{ selected.code }} — {{ selected.name }} · ID {{ selected.id }}</h2>
+    <p *ngIf="selected.sharedEventCount > 1" class="border border-amber-400 rounded p-3 mb-4">Esta categoría se utiliza en {{ selected.sharedEventCount }} eventos. Los cambios se aplicarán a todos ellos.</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <mat-form-field appearance="outline"><mat-label>Código</mat-label><input matInput formControlName="code" maxlength="6"><mat-error>Ingresa un código de hasta 6 caracteres.</mat-error></mat-form-field>
+      <mat-form-field appearance="outline"><mat-label>Nombre</mat-label><input matInput formControlName="name" maxlength="100"><mat-error>Ingresa un nombre de hasta 100 caracteres.</mat-error></mat-form-field>
+      <mat-form-field appearance="outline"><mat-label>Género</mat-label><mat-select formControlName="gender"><mat-option value="Male">Masculino</mat-option><mat-option value="Female">Femenino</mat-option><mat-option value="Mixto">Mixto</mat-option></mat-select></mat-form-field>
+      <mat-form-field appearance="outline"><mat-label>Formato de competencia</mat-label><mat-select formControlName="fixtureType"><mat-option value="ELIMINACION">Eliminación</mat-option><mat-option value="ELIMINACIONKUDO">Eliminación directa (Kudo)</mat-option><mat-option value="KUDOREPECHAGE">Eliminación directa (Kudo-repechage)</mat-option><mat-option value="ROUNDROBIN">Todos contra todos</mat-option><mat-option value="MEJORDETRES">Mejor de tres</mat-option><mat-option value="KATAJKA">Kata JKA</mat-option><mat-option value="SOLOPUNTAJE">Solo Puntaje</mat-option></mat-select><mat-hint>Las llaves ya generadas se conservan.</mat-hint></mat-form-field>
+      <mat-form-field *ngFor="let field of integerFields" appearance="outline"><mat-label>{{ field.label }}</mat-label><input matInput type="number" min="0" max="2147483647" step="1" [formControlName]="field.key"><mat-hint *ngIf="field.key === 'maxCompetitors'">0: sin límite de competidores.</mat-hint><mat-error>Ingresa un entero igual o mayor a cero.</mat-error></mat-form-field>
+      <mat-form-field *ngFor="let field of weightFields" appearance="outline"><mat-label>{{ field.label }}</mat-label><input matInput type="number" min="0" max="999.99" step="0.01" [formControlName]="field.key"><mat-error>Ingresa un peso entre 0 y 999,99.</mat-error></mat-form-field>
+      <mat-form-field appearance="outline"><mat-label>Tipo</mat-label><mat-select formControlName="typeId"><mat-option *ngFor="let type of config.types" [value]="type.id">{{ type.name }}</mat-option></mat-select><mat-error>Selecciona un tipo.</mat-error></mat-form-field>
+      <mat-form-field appearance="outline"><mat-label>Modalidad</mat-label><mat-select formControlName="modalityId"><mat-option *ngFor="let modality of config.modalities" [value]="modality.id">{{ modality.name }}</mat-option></mat-select><mat-error>Selecciona una modalidad.</mat-error></mat-form-field>
+      <mat-form-field appearance="outline"><mat-label>Categoría abierta</mat-label><mat-select formControlName="isOpen"><mat-option [value]="null">Sin configurar</mat-option><mat-option [value]="true">Sí</mat-option><mat-option [value]="false">No</mat-option></mat-select></mat-form-field>
+      <mat-form-field appearance="outline"><mat-label>Duración del combate</mat-label><input matInput type="time" step="1" formControlName="matchDuration"><mat-error>Ingresa una duración válida en horas, minutos y segundos.</mat-error></mat-form-field>
+    </div>
+    <mat-checkbox formControlName="isFree" class="my-4">Categoría gratuita</mat-checkbox>
+    <div class="my-4"><mat-checkbox formControlName="thirdPlacePlayoff">Definir tercer lugar</mat-checkbox><p class="text-secondary">Agrega el combate de definición solo al PDF y deja un único tercer lugar en la tabla de posiciones.</p></div>
+    <div class="flex justify-end"><button mat-flat-button color="primary" type="submit" [disabled]="saving">{{ saving ? 'Guardando…' : 'Guardar categoría' }}</button></div>
+  </form>
+</main>

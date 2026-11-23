@@ -2,7 +2,7 @@ import { Component, Input, OnInit } from '@angular/core';
 import { NavigationService } from '../../../core/navigation/navigation.service';
 import { VexLayoutService } from '@vex/services/vex-layout.service';
 import { VexConfigService } from '@vex/config/vex-config.service';
-import { map, startWith, switchMap } from 'rxjs/operators';
+import { distinctUntilChanged, filter, map, startWith, switchMap } from 'rxjs/operators';
 import { NavigationItem } from '../../../core/navigation/navigation-item.interface';
 import { VexPopoverService } from '@vex/components/vex-popover/vex-popover.service';
 import { Observable, of } from 'rxjs';
@@ -15,6 +15,9 @@ import { MatRippleModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { AsyncPipe, NgFor, NgIf } from '@angular/common';
+import { AuthService } from '../../../core/auth/auth.service';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
+import { AcademyService } from '../../../pages/academy/academy.service';
 
 @Component({
   selector: 'vex-sidenav',
@@ -29,7 +32,8 @@ import { AsyncPipe, NgFor, NgIf } from '@angular/common';
     VexScrollbarComponent,
     NgFor,
     SidenavItemComponent,
-    AsyncPipe
+    AsyncPipe,
+    TranslatePipe
   ]
 })
 export class SidenavComponent implements OnInit {
@@ -54,16 +58,38 @@ export class SidenavComponent implements OnInit {
   userMenuOpen$: Observable<boolean> = of(false);
 
   items$: Observable<NavigationItem[]> = this.navigationService.items$;
+  currentUser$ = this.authService.currentUser$;
+  readonly defaultAcademyLogo = 'assets/img/logo/budo-tournaments.png';
+  readonly academyLogo$ = this.currentUser$.pipe(
+    map(user => user?.academieId ?? 0),
+    distinctUntilChanged(),
+    switchMap(id => id > 0
+      ? this.academyService.academyUpdated$.pipe(
+          filter(updatedId => updatedId === id),
+          startWith(id),
+          map(() => this.academyService.getLogoUrl(id, Date.now()))
+        )
+      : of(this.defaultAcademyLogo))
+  );
 
   constructor(
     private navigationService: NavigationService,
     private layoutService: VexLayoutService,
     private configService: VexConfigService,
+    private readonly authService: AuthService,
     private readonly popoverService: VexPopoverService,
-    private readonly dialog: MatDialog
+    private readonly dialog: MatDialog,
+    private readonly academyService: AcademyService
   ) {}
 
   ngOnInit() {}
+
+  onAcademyLogoError(event: Event): void {
+    const image = event.target as HTMLImageElement;
+    if (image.getAttribute('src') !== this.defaultAcademyLogo) {
+      image.src = this.defaultAcademyLogo;
+    }
+  }
 
   collapseOpenSidenav() {
     this.layoutService.collapseOpenSidenav();

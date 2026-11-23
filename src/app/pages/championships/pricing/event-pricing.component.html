@@ -1,0 +1,101 @@
+<main class="p-6 max-w-6xl mx-auto">
+  <a mat-button [routerLink]="backLink">Volver a eventos</a>
+  <h1 class="text-2xl font-semibold my-4">Tarifas de inscripción · Evento {{ eventId }}</h1>
+  <p *ngIf="loading" role="status">Cargando configuración…</p>
+  <div *ngIf="error" class="card p-4 my-4 text-red-700" role="alert">{{ error }} <button *ngIf="!config" mat-button (click)="load()">Reintentar</button></div>
+  <p *ngIf="message" role="status">{{ message }}</p>
+  <section *ngIf="summary as s" class="card p-4 my-4">
+    <h2 class="text-lg font-medium">Ingresos estimados por inscripciones</h2>
+    <p>Competidores: {{ s.totalCompetitors }} · Inscripciones gratuitas: {{ s.freeRegistrations }} · Unidades cobrables: {{ s.billableUnits }}</p>
+    <p>Total calculado: <strong>{{ money(s.totalCalculated) }}</strong></p>
+    <p *ngIf="!s.pricingComplete">Hay inscripciones sin tarifa. El total está incompleto.</p>
+    <p class="text-secondary">Este monto corresponde a cobros calculados. Los pagos recibidos se consultan en el resumen de pagos.</p>
+  </section>
+  <ng-container *ngIf="config && rule && !loading">
+    <p class="mb-4">Modo actual: <strong>{{ config.mode === 'LEGACY' ? 'Tarifas antiguas' : 'Tarifas configuradas' }}</strong>. {{ byCombination ? 'Las combinaciones activas determinan la tarifa. Usa Recalcular para guardar nuevas versiones de las inscripciones existentes.' : 'Las tarifas se conservan en el historial de cada inscripción.' }}</p>
+    <form [formGroup]="form" (ngSubmit)="save()" class="card p-5">
+      <fieldset [disabled]="saving">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <mat-form-field appearance="outline"><mat-label>Nombre de la tarifa</mat-label><input matInput formControlName="name"></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Tipo de cálculo</mat-label><mat-select formControlName="calculationTypeId"><mat-option *ngFor="let type of config.calculationTypes" [value]="type.id">{{ type.name }}</mat-option></mat-select></mat-form-field>
+          <mat-form-field *ngIf="!byCombination" appearance="outline"><mat-label>Precio primera unidad (CLP)</mat-label><input matInput type="number" min="0" step="0.01" formControlName="basePrice"><mat-hint>{{ money(form.controls.basePrice.value) }}</mat-hint></mat-form-field>
+          <mat-form-field *ngIf="!byCombination" appearance="outline"><mat-label>Precio unidad adicional (CLP)</mat-label><input matInput type="number" min="0" step="0.01" formControlName="additionalPrice"><mat-hint>{{ money(form.controls.additionalPrice.value) }}</mat-hint></mat-form-field>
+        </div>
+        <mat-checkbox *ngIf="!byCombination" formControlName="isActive">Activar motor tarifario</mat-checkbox>
+        <section *ngIf="byCombination" class="my-5">
+          <h2 class="text-lg font-medium">Tarifas por combinación</h2>
+          <p>Indica la cantidad exacta de categorías por modalidad y el precio total, incluidas las gratuidades. La fecha del evento determina la preventa.</p>
+          <div *ngFor="let tariff of rule.combinations; index as row" class="border rounded p-4 my-3">
+            <div class="flex flex-wrap gap-3 items-center">
+              <mat-form-field><mat-label>Inscripción</mat-label><mat-select [(ngModel)]="tariff.registrationType" [ngModelOptions]="{standalone:true}" (ngModelChange)="markDirty()"><mat-option value="INDIVIDUAL">Deportista</mat-option><mat-option value="EQUIPO">Equipo</mat-option></mat-select></mat-form-field>
+              <ng-container *ngFor="let term of tariff.terms; index as termIndex">
+                <mat-form-field class="w-24"><mat-label>Cantidad</mat-label><input matInput type="number" min="1" max="1000" step="1" [(ngModel)]="term.quantity" [ngModelOptions]="{standalone:true}" (ngModelChange)="markDirty()"></mat-form-field>
+                <mat-form-field><mat-label>Modalidad</mat-label><mat-select [(ngModel)]="term.modalityId" [ngModelOptions]="{standalone:true}" (ngModelChange)="markDirty()"><mat-option *ngFor="let m of modalities; trackBy: trackModality" [value]="m.id">{{ m.name }}</mat-option></mat-select></mat-form-field>
+                <button *ngIf="tariff.terms.length > 1" mat-button type="button" (click)="tariff.terms.splice(termIndex,1); markDirty()">Quitar modalidad</button>
+              </ng-container>
+              <button mat-button type="button" (click)="tariff.terms.push({modalityId:0,quantity:1}); markDirty()">Agregar modalidad</button>
+              <mat-form-field><mat-label>Precio total (CLP)</mat-label><input matInput type="number" min="0" step="1" [(ngModel)]="tariff.price" [ngModelOptions]="{standalone:true}" (ngModelChange)="markDirty()"></mat-form-field>
+              <mat-checkbox [(ngModel)]="tariff.isPresale" [ngModelOptions]="{standalone:true}" (ngModelChange)="markDirty()">Es preventa</mat-checkbox>
+              <mat-checkbox [(ngModel)]="tariff.isActive" [ngModelOptions]="{standalone:true}" (ngModelChange)="markDirty()">Activa</mat-checkbox>
+            </div>
+          </div>
+          <button mat-stroked-button type="button" (click)="addCombination()">Agregar combinación</button>
+        </section>
+        <p *ngIf="!byCombination && form.controls.isActive.value && !rule.isActive" role="status" class="border border-amber-400 rounded p-4 my-4 bg-amber-50 text-amber-900">
+          Al guardar y activar el motor se recalcularán todas las inscripciones existentes, incluidos los equipos, con estas tarifas.
+          Los pagos recibidos no se modificarán. Debes revisar manualmente las diferencias y los saldos después de la activación.
+        </p>
+        <ng-container *ngIf="!byCombination"><h2 class="text-lg font-medium mt-6">Modalidades sin costo</h2>
+        <p>Las categorías pertenecientes a estas modalidades no generarán cobro.</p>
+        <div class="flex flex-wrap gap-4 my-3"><mat-checkbox *ngFor="let m of modalities; trackBy: trackModality" [checked]="modalityFree(m.id)" (change)="toggleModality(m.id, $event.checked)">{{ m.name }}</mat-checkbox></div></ng-container>
+        <section *ngIf="byGroup" class="my-6">
+          <h2 class="text-lg font-medium">Grupos tarifarios</h2>
+          <p>El primer grupo cobrable usa su precio base propio o, si está vacío, el precio general. Se prioriza el grupo base, luego el orden y el identificador.</p>
+          <p>Para equipos, indica su valor en «Precio base propio» y asigna sus categorías a ese grupo. Cada grupo se cobra una sola vez.</p>
+          <div *ngFor="let group of rule.groups" class="border rounded p-3 my-3 flex flex-wrap items-center gap-3">
+            <mat-form-field><mat-label>Nombre</mat-label><input matInput [(ngModel)]="group.name" [ngModelOptions]="{standalone: true}" (ngModelChange)="markDirty()"></mat-form-field>
+            <mat-form-field><mat-label>Orden</mat-label><input matInput type="number" min="0" [(ngModel)]="group.groupOrder" [ngModelOptions]="{standalone: true}" (ngModelChange)="markDirty()"></mat-form-field>
+            <mat-form-field><mat-label>Precio base propio (CLP, opcional)</mat-label><input matInput type="number" min="0" step="0.01" [(ngModel)]="group.basePrice" [ngModelOptions]="{standalone: true}" (ngModelChange)="markDirty()"><mat-hint>{{ group.basePrice == null ? 'Vacío: usar precio base general' : money(group.basePrice) }}</mat-hint></mat-form-field>
+            <mat-form-field><mat-label>Adicional propio (opcional)</mat-label><input matInput type="number" min="0" step="0.01" [(ngModel)]="group.additionalPrice" [ngModelOptions]="{standalone: true}" (ngModelChange)="markDirty()"><mat-hint>Vacío: usar tarifa general</mat-hint></mat-form-field>
+            <mat-checkbox [(ngModel)]="group.isBase" [ngModelOptions]="{standalone: true}" (ngModelChange)="markDirty()">Grupo base</mat-checkbox>
+            <mat-checkbox [(ngModel)]="group.isActive" [ngModelOptions]="{standalone: true}" (ngModelChange)="markDirty()">Activo</mat-checkbox>
+            <button mat-button type="button" (click)="removeGroup(group.id)">Eliminar</button>
+          </div>
+          <button mat-stroked-button type="button" (click)="addGroup()">Crear grupo</button>
+        </section>
+        <div class="flex flex-wrap items-center justify-between gap-3 mt-6 mb-3">
+          <h2 class="text-lg font-medium">Categorías del evento ({{ rule.categories.length }})</h2>
+          <button mat-stroked-button type="button" (click)="categoriesCollapsed = !categoriesCollapsed"
+            [attr.aria-expanded]="!categoriesCollapsed" aria-controls="event-pricing-categories">
+            {{ categoriesCollapsed ? 'Mostrar categorías' : 'Contraer categorías' }}
+          </button>
+        </div>
+        <div id="event-pricing-categories" [hidden]="categoriesCollapsed" class="overflow-auto"><table class="w-full text-left"><thead><tr><th>Categoría</th><th>Gratuidad</th><th *ngIf="byGroup">Grupo</th></tr></thead><tbody>
+          <tr *ngFor="let category of rule.categories"><td class="py-3">{{ categoryName(category.categoryId) }}</td>
+            <td><strong *ngIf="!byCombination && categoryModalityFree(category.categoryId)" class="text-green-700">GRATIS POR MODALIDAD</strong>
+              <mat-checkbox *ngIf="byCombination || !categoryModalityFree(category.categoryId)" [(ngModel)]="category.isFree" [ngModelOptions]="{standalone: true}" (ngModelChange)="markDirty()">{{ category.isFree ? 'GRATIS' : 'Sin costo' }}</mat-checkbox></td>
+            <td *ngIf="byGroup"><mat-form-field><mat-label>Grupo tarifario</mat-label><mat-select [(ngModel)]="category.priceGroupId" [ngModelOptions]="{standalone: true}" (ngModelChange)="markDirty()"><mat-option [value]="null">SIN CONFIGURAR</mat-option><ng-container *ngFor="let group of rule.groups"><mat-option *ngIf="group.isActive" [value]="group.id">{{ group.name }}</mat-option></ng-container></mat-select></mat-form-field></td>
+          </tr></tbody></table></div>
+        <button mat-raised-button color="primary" type="submit" [disabled]="saving">{{ saving ? 'Guardando…' : 'Guardar configuración' }}</button>
+      </fieldset>
+    </form>
+    <section *ngIf="byCombination && rule.isActive" class="card p-5 my-5">
+      <h2 class="text-lg font-medium">Recalcular inscripciones</h2>
+      <p>Guarda una nueva versión por deportista, conservando los pagos y cálculos anteriores.</p>
+      <mat-form-field><mat-label>Motivo del recálculo</mat-label><input matInput [(ngModel)]="recalculateReason" maxlength="500"></mat-form-field>
+      <button mat-stroked-button type="button" [disabled]="dirty || saving || recalculating || !recalculateReason.trim()" (click)="recalculate()">{{ recalculating ? 'Recalculando...' : 'Recalcular y guardar historial' }}</button>
+    </section>
+    <section class="card p-5 my-5">
+      <h2 class="text-lg font-medium">Simular inscripción</h2>
+      <p>La simulación utiliza la configuración guardada y activa del evento.</p>
+      <p *ngIf="selected.size && simulationType">Tipo de inscripción: {{ simulationType === 'EQUIPO' ? 'Equipo' : 'Deportista' }}.</p>
+      <p *ngIf="selected.size && !simulationType" role="alert">Selecciona categorías de deportistas o de equipos por separado.</p>
+      <p>Coach no genera cobro ni modifica la combinación.</p>
+      <p *ngIf="dirty" role="status">Guarda los cambios antes de simular.</p>
+      <div class="grid my-4"><mat-checkbox *ngFor="let category of config.categories" [checked]="selected.has(category.categoryId)" [disabled]="calculating" (change)="toggleSimulation(category.categoryId, $event.checked)">{{ category.categoryName }}</mat-checkbox></div>
+      <button mat-stroked-button [disabled]="dirty || calculating || saving" (click)="simulate()">{{ calculating ? 'Calculando…' : 'Simular inscripción' }}</button>
+      <p *ngIf="simulationError" role="alert">{{ simulationError }}</p>
+      <bte-price-detail [result]="result"></bte-price-detail>
+    </section>
+  </ng-container>
+</main>

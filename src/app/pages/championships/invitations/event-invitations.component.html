@@ -1,0 +1,86 @@
+<vex-page-layout>
+  <vex-page-layout-header class="invitations-header pb-16 flex flex-col items-start justify-center">
+    <div class="container w-full">
+      <h1 class="title mt-0 mb-1">{{ 'Eventos disponibles' | translate }}</h1>
+      <vex-breadcrumbs
+        [crumbs]="['Campeonatos' | translate, 'Invitaciones' | translate]">
+      </vex-breadcrumbs>
+    </div>
+  </vex-page-layout-header>
+
+  <vex-page-layout-content class="invitations-content container -mt-6">
+    <section class="invitations-shell" @fadeInUp>
+      <div *ngIf="loading" class="state-panel">
+        <mat-spinner diameter="44"></mat-spinner>
+        <p>{{ 'Cargando eventos...' | translate }}</p>
+      </div>
+
+      <div *ngIf="!loading && loadError" class="state-panel error-state">
+        <mat-icon svgIcon="mat:error_outline"></mat-icon>
+        <h2>{{ 'No pudimos cargar los eventos' | translate }}</h2>
+        <p>{{ 'Comprueba tu conexión e inténtalo nuevamente.' | translate }}</p>
+        <button mat-flat-button color="primary" (click)="loadEvents()">
+          <mat-icon svgIcon="mat:refresh"></mat-icon>
+          {{ 'Reintentar' | translate }}
+        </button>
+      </div>
+
+      <div *ngIf="!loading && !loadError && events.length === 0" class="state-panel">
+        <mat-icon svgIcon="mat:event_busy"></mat-icon>
+        <h2>{{ 'No hay eventos disponibles' | translate }}</h2>
+      </div>
+
+      <div
+        *ngIf="!loading && !loadError && events.length"
+        class="events-grid"
+        @stagger>
+        <mat-card
+          *ngFor="let event of events; trackBy: trackByEventId"
+          class="event-card"
+          [class.event-card--available]="isAvailable(event)"
+          [class.event-card--closed]="!isAvailable(event)">
+          <div class="poster-wrap">
+            <img
+              mat-card-image
+              [src]="event.poster"
+              [alt]="event.name"
+              loading="lazy"
+              (error)="onPosterError($event)" />
+            <span class="status-chip">
+              {{ (isAvailable(event) ? 'Inscripciones abiertas' : 'Inscripciones cerradas') | translate }}
+            </span>
+          </div>
+
+          <mat-card-header>
+            <mat-card-title>{{ event.name }}</mat-card-title>
+          </mat-card-header>
+
+          <mat-card-content>
+            <div class="event-data" *ngIf="event.eventDateCheckin">
+              <mat-icon svgIcon="mat:event"></mat-icon>
+              <span>
+                {{ 'Cierre de inscripción' | translate }}:
+                {{ event.eventDateCheckin | date: 'dd/MM/yyyy, HH:mm' }}
+              </span>
+            </div>
+            <div class="event-data" *ngIf="event.eventLocation || event.eventAddress">
+              <mat-icon svgIcon="mat:location_on"></mat-icon>
+              <span>{{ event.eventLocation || event.eventAddress }}</span>
+            </div>
+          </mat-card-content>
+
+          <mat-card-actions *ngIf="canViewDetails(event)">
+            <a
+              mat-flat-button
+              color="primary"
+              class="details-button"
+              [routerLink]="['/campeonatos/invitaciones', event.id]">
+              <mat-icon svgIcon="mat:visibility"></mat-icon>
+              {{ 'Ver más' | translate }}
+            </a>
+          </mat-card-actions>
+        </mat-card>
+      </div>
+    </section>
+  </vex-page-layout-content>
+</vex-page-layout>

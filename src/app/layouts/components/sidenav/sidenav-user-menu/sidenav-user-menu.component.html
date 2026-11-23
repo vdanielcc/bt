@@ -8,7 +8,7 @@
     <mat-icon
       class="vex-user-menu-item__icon icon-sm"
       svgIcon="mat:account_circle"></mat-icon>
-    <div class="vex-user-menu-item__label">Your Profile</div>
+    <div class="vex-user-menu-item__label">{{ 'Your Profile' | translate }}</div>
   </a>
 
   <a
@@ -20,8 +20,8 @@
     <mat-icon
       class="vex-user-menu-item__icon icon-sm"
       svgIcon="mat:insights"></mat-icon>
-    <div class="vex-user-menu-item__label">Analytics</div>
-    <div class="vex-user-menu-item__badge">NEW</div>
+    <div class="vex-user-menu-item__label">{{ 'Analytics' | translate }}</div>
+    <div class="vex-user-menu-item__badge">{{ 'NEW' | translate }}</div>
   </a>
 
   <a
@@ -33,33 +33,35 @@
     <mat-icon
       class="vex-user-menu-item__icon icon-sm"
       svgIcon="mat:settings"></mat-icon>
-    <div class="vex-user-menu-item__label">Account Settings</div>
+    <div class="vex-user-menu-item__label">{{ 'Account Settings' | translate }}</div>
   </a>
 
   <div class="border-b border-divider mx-4"></div>
 
-  <div
-    class="vex-user-menu-item"
+  <button
+    *ngIf="canSwitchAccount"
+    (click)="switchAccount()"
+    type="button"
+    class="vex-user-menu-item vex-user-menu-switch-account text-left"
     matRipple
     matRippleColor="rgb(var(--vex-color-primary-600), 0.1)">
     <mat-icon
       class="vex-user-menu-item__icon icon-sm"
       svgIcon="mat:switch_account"></mat-icon>
-    <div class="vex-user-menu-item__label">Switch Account</div>
+    <div class="vex-user-menu-item__label">{{ 'Switch Account' | translate }}</div>
     <mat-icon
       class="vex-user-menu-item__icon icon-sm"
       svgIcon="mat:chevron_right"></mat-icon>
-  </div>
+  </button>
 
   <a
-    (click)="close()"
-    [routerLink]="['/login']"
+    (click)="signOut()"
     class="vex-user-menu-item"
     matRipple
     matRippleColor="rgb(var(--vex-color-primary-600), 0.1)">
     <mat-icon
       class="vex-user-menu-item__icon icon-sm"
       svgIcon="mat:logout"></mat-icon>
-    <div class="vex-user-menu-item__label">Sign Out</div>
+    <div class="vex-user-menu-item__label">{{ 'Sign Out' | translate }}</div>
   </a>
 </div>

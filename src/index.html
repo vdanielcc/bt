@@ -1,12 +1,67 @@
 <!doctype html>
-<html lang="en">
+<html lang="es-CL" prefix="og: https://ogp.me/ns#">
 <head>
   <meta charset="utf-8" />
-  <title>Vex - Angular 17+ Material Design Admin Template</title>
+  <title>Budo Tournaments | Torneos de artes marciales y academias</title>
   <base href="/" />
 
   <meta content="width=device-width, initial-scale=1" name="viewport" />
-  <link href="favicon.ico" rel="icon" type="image/x-icon" />
+  <meta name="description" content="Organiza torneos de artes marciales y gestiona tu academia: inscripciones, categorías, llaves, resultados, alumnos e instructores en Budo Tournaments." />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="theme-color" content="#111827" />
+  <meta name="application-name" content="Budo Tournaments" />
+  <link rel="canonical" href="https://budotournaments.net/app/" />
+
+  <!-- Static metadata: social crawlers must not depend on Angular or a login. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Budo Tournaments" />
+  <meta property="og:locale" content="es_CL" />
+  <meta property="og:title" content="Budo Tournaments | Torneos de artes marciales y academias" />
+  <meta property="og:description" content="Organiza torneos de artes marciales y gestiona tu academia: inscripciones, categorías, llaves, resultados, alumnos e instructores en Budo Tournaments." />
+  <meta property="og:url" content="https://budotournaments.net/app/" />
+  <meta property="og:image" content="https://budotournaments.net/app/assets/seo/budo-tournaments-social-v1.jpg" />
+  <meta property="og:image:secure_url" content="https://budotournaments.net/app/assets/seo/budo-tournaments-social-v1.jpg" />
+  <meta property="og:image:type" content="image/jpeg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Budo Tournaments: torneos de artes marciales y gestión de academias" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Budo Tournaments | Torneos de artes marciales y academias" />
+  <meta name="twitter:description" content="Organiza torneos de artes marciales y gestiona tu academia: inscripciones, categorías, llaves, resultados, alumnos e instructores en Budo Tournaments." />
+  <meta name="twitter:image" content="https://budotournaments.net/app/assets/seo/budo-tournaments-social-v1.jpg" />
+  <meta name="twitter:image:alt" content="Budo Tournaments: torneos de artes marciales y gestión de academias" />
+
+  <link rel="icon" href="favicon.ico?v=bte-seo-v1" sizes="16x16 32x32 48x48" type="image/x-icon" />
+  <link rel="icon" href="assets/seo/favicon-32.png?v=bte-seo-v1" sizes="32x32" type="image/png" />
+  <link rel="icon" href="favicon.png?v=bte-seo-v1" sizes="96x96" type="image/png" />
+  <link rel="apple-touch-icon" href="assets/seo/apple-touch-icon.png?v=bte-seo-v1" sizes="180x180" />
+  <meta name="apple-mobile-web-app-title" content="Budo Tournaments" />
+  <link rel="manifest" href="site.webmanifest?v=bte-seo-v1" />
+  <meta name="msapplication-TileColor" content="#111827" />
+  <meta name="msapplication-TileImage" content="assets/seo/icon-512.png?v=bte-seo-v1" />
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://budotournaments.net/#organization",
+          "name": "Budo Tournaments",
+          "url": "https://budotournaments.net/",
+          "logo": "https://budotournaments.net/app/assets/seo/icon-512.png"
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://budotournaments.net/app/#website",
+          "name": "Budo Tournaments",
+          "url": "https://budotournaments.net/app/",
+          "inLanguage": "es-CL",
+          "description": "Plataforma de torneos de artes marciales y gestión de academias.",
+          "publisher": { "@id": "https://budotournaments.net/#organization" }
+        }
+      ]
+    }
+  </script>
 </head>
 <body dir="ltr">
 <style>
@@ -57,10 +112,17 @@
     height="70"
     width="70"
     loading="eager"
-    src="assets/img/logo/logo.svg" />
+    alt="Budo Tournaments"
+    src="assets/img/logo/budo-tournaments.png" />
   <div class="vex-splash-screen-loader"></div>
 </div>
 
 <vex-root></vex-root>
+<noscript>
+  <style>#vex-splash-screen { display: none; }</style>
+  <h1>Budo Tournaments</h1>
+  <p>Plataforma de torneos de artes marciales y gestión de academias: inscripciones, categorías, llaves y resultados.</p>
+  <p>Activa JavaScript para consultar los eventos y acceder a tu cuenta.</p>
+</noscript>
 </body>
 </html>

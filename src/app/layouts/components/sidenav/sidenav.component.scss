@@ -10,9 +10,17 @@
 
     &:not(.open) {
       .vex-sidenav-toolbar__headline,
-      .vex-sidenav-toolbar__collapse-toggle {
+      .sidenav-logo {
         opacity: 0;
         padding-inline-start: var(--vex-sidenav-item-padding-horizontal);
+      }
+
+      .vex-sidenav-toolbar__collapse-toggle {
+        display: block;
+        position: absolute;
+        inset-inline-start: 16px;
+        margin: 0;
+        opacity: 1;
       }
 
       ::ng-deep {
@@ -90,6 +98,7 @@
   height: var(--vex-toolbar-height);
   white-space: nowrap;
   width: 100%;
+  position: relative;
   @apply py-0 px-6;
 }
 

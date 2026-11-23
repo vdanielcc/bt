@@ -1,0 +1,67 @@
+<vex-page-layout>
+  <vex-page-layout-header class="pb-16">
+    <div class="px-6">
+      <vex-breadcrumbs [crumbs]="['Campeonatos', 'Cronograma']"></vex-breadcrumbs>
+      <h1 class="title mt-2 mb-0">Cronograma</h1>
+      <p class="text-secondary mt-1 mb-0">Distribuye las categorías entre las áreas de competencia.</p>
+    </div>
+  </vex-page-layout-header>
+  <vex-page-layout-content class="-mt-6">
+    <mat-card class="schedule-card">
+      <div *ngIf="loadingEvents" class="state"><mat-spinner diameter="44"></mat-spinner><span>Cargando eventos...</span></div>
+      <div *ngIf="!loadingEvents && loadError" class="state error"><mat-icon svgIcon="mat:error_outline"></mat-icon><h2>No pudimos cargar los eventos.</h2></div>
+      <ng-container *ngIf="!loadingEvents && !loadError">
+        <mat-form-field *ngIf="events.length > 1" appearance="outline" class="event-select">
+          <mat-label>Evento</mat-label>
+          <mat-select [(ngModel)]="selectedEventId" (selectionChange)="loadCategories()" [disabled]="saving || loadingCategories || loadingSavedSchedule || recalculating">
+            <mat-option *ngFor="let event of events" [value]="event.id">{{ event.name }} · {{ event.eventDateStart | date: 'dd/MM/yyyy' }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <section *ngIf="selectedEvent" class="event-summary">
+          <mat-form-field appearance="outline" class="day-select">
+            <mat-label>Día de competencia</mat-label>
+            <mat-select [value]="selectedDay" (selectionChange)="selectDay($event.value)" [disabled]="loadingCategories || loadingSavedSchedule || saving || recalculating">
+              <mat-option *ngFor="let day of days" [value]="day">Día {{ day }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <div><span>Evento</span><strong>{{ selectedEvent.name }}</strong></div>
+          <div><span>Hora de inicio</span><strong>{{ eventStartTime }}</strong></div>
+          <div><span>Fecha</span><strong>{{ dayStart?.slice(0, 10) | date: 'dd/MM/yyyy' }}</strong></div>
+          <div><span>Áreas configuradas</span><strong>{{ areas.length }}</strong></div>
+          <button mat-stroked-button color="primary" type="button" [disabled]="loadingCategories || loadingSavedSchedule || categoriesError || saving || recalculating || !areas.length" (click)="recalculate()"><mat-icon svgIcon="mat:refresh"></mat-icon>{{ recalculating ? 'Recalculando...' : 'Recalcular' }}</button>
+          <button mat-flat-button color="primary" type="button" class="save-button" [disabled]="loadingCategories || loadingSavedSchedule || categoriesError || saving || recalculating || !areas.length" (click)="saveSchedule()"><mat-icon svgIcon="mat:save"></mat-icon>{{ saving ? 'Guardando...' : 'Guardar día' }}</button>
+          <button mat-stroked-button color="primary" type="button" [disabled]="loadingCategories || loadingSavedSchedule || categoriesError || saving || recalculating || downloadingPdf || !areas.length" [matMenuTriggerFor]="pdfMenu"><mat-icon svgIcon="mat:picture_as_pdf"></mat-icon>{{ downloadingPdf ? 'Preparando PDF...' : 'Descargar cronograma' }}</button>
+          <mat-menu #pdfMenu="matMenu" aria-label="Descargar cronograma en PDF">
+            <button mat-menu-item type="button" (click)="downloadPdf()">Todo</button>
+            <button mat-menu-item type="button" *ngFor="let area of areas; trackBy: trackArea" (click)="downloadPdf(area.number)">Área {{ area.number }}</button>
+          </mat-menu>
+        </section>
+        <div *ngIf="!events.length" class="state compact"><mat-icon svgIcon="mat:event_busy"></mat-icon><p>No hay eventos vigentes asociados a la academia.</p></div>
+        <div *ngIf="loadingCategories" class="state compact"><mat-spinner diameter="38"></mat-spinner><span>Cargando categorías...</span></div>
+        <div *ngIf="categoriesError && !loadingCategories" class="state compact error"><mat-icon svgIcon="mat:error_outline"></mat-icon><p>No fue posible cargar las categorías del evento.</p></div>
+        <div *ngIf="selectedEvent && !loadingCategories && !categoriesError && !areas.length" class="state compact"><mat-icon svgIcon="mat:grid_off"></mat-icon><p>El evento no tiene áreas configuradas.</p></div>
+        <div *ngIf="areas.length && !loadingCategories && !categoriesError" class="schedule-table" [style.--area-count]="areas.length" cdkDropListGroup>
+          <section class="area-column" *ngFor="let area of areas; trackBy: trackArea">
+            <header>
+              <strong>Tatami {{ area.number }}</strong>
+              <button mat-icon-button type="button" aria-label="Agregar receso" (click)="addBreak(area)" [disabled]="saving || loadingSavedSchedule"><mat-icon svgIcon="mat:free_breakfast"></mat-icon></button>
+            </header>
+            <div class="category-list" cdkDropList [cdkDropListDisabled]="saving || loadingSavedSchedule || recalculating" [id]="areaDropListId(area.number)" [cdkDropListData]="area.items" [cdkDropListConnectedTo]="connectedAreaIds" (cdkDropListDropped)="drop($event)">
+              <article class="category-card" [class.break-card]="item.type === 'break'" *ngFor="let item of area.items; index as itemIndex; trackBy: trackItem" cdkDrag>
+                <mat-icon class="drag-handle" svgIcon="mat:drag_indicator" cdkDragHandle></mat-icon>
+                <div class="category-copy"><small *ngIf="item.code">{{ item.code }}</small><strong>{{ item.name }}</strong>
+                  <div class="category-metrics"><span>{{ item.type === 'category' ? item.competitorCount + ' participantes' : itemDuration(item) }}</span><span>Inicio aprox. <b>{{ itemTime(area, itemIndex) }}</b></span></div>
+                  <select *ngIf="days.length > 1" aria-label="Mover a otro día" [value]="selectedDay" (change)="moveToDay(area, itemIndex, +$any($event.target).value)" [disabled]="saving || loadingSavedSchedule"><option *ngFor="let day of days" [value]="day">Día {{ day }}</option></select>
+                </div>
+                <button mat-icon-button type="button" class="remove-button" [disabled]="saving || loadingSavedSchedule || recalculating" [attr.aria-label]="item.type === 'break' ? 'Eliminar receso' : 'Eliminar categoría'" (click)="removeItem(area, itemIndex)"><mat-icon svgIcon="mat:delete_outline"></mat-icon></button>
+                <div class="category-placeholder" *cdkDragPlaceholder></div>
+              </article>
+              <div *ngIf="!area.items.length" class="area-empty">Arrastra categorías o agrega un receso</div>
+            </div>
+            <footer><div><small>Participantes</small><strong>{{ areaParticipants(area) }}</strong></div><div><small>Duración aprox.</small><strong>{{ areaDuration(area) }}</strong></div><div><small>Fin aprox.</small><strong>{{ areaEnd(area) }}</strong></div></footer>
+          </section>
+        </div>
+      </ng-container>
+    </mat-card>
+  </vex-page-layout-content>
+</vex-page-layout>

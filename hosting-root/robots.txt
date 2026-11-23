@@ -1,0 +1,15 @@
+# Merge these rules with the domain's existing robots.txt; do not replace unrelated rules.
+User-agent: *
+Disallow: /app/
+Allow: /app/$
+Allow: /app/login$
+Allow: /app/eventos/
+Allow: /app/assets/
+Allow: /app/favicon.ico
+Allow: /app/favicon.png
+Allow: /app/site.webmanifest
+Allow: /app/sitemap.xml
+Allow: /app/*.js$
+Allow: /app/*.css$
+
+Sitemap: https://budotournaments.net/app/sitemap.xml

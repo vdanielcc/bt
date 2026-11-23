@@ -1,0 +1,55 @@
+<div class="management-page">
+  <h1>Gestión Alumnos</h1>
+  <p class="intro">Inscripción, edición y traslado de alumnos entre dojos.</p>
+  <div class="action-cards">
+    <button type="button" class="action-card enroll" (click)="chooseMode('create')" [disabled]="saving || opening" [attr.aria-pressed]="mode === 'create'"><mat-icon svgIcon="mat:person_add"></mat-icon><strong>Inscribir Alumnos</strong><span>Crear un alumno y asignarlo a una escuela.</span></button>
+    <button type="button" class="action-card edit" (click)="chooseMode('edit')" [disabled]="saving || opening" [attr.aria-pressed]="mode === 'edit'"><mat-icon svgIcon="mat:edit"></mat-icon><strong>Editar Alumnos</strong><span>Buscar y actualizar los datos de un alumno.</span></button>
+    <button type="button" class="action-card move" (click)="chooseMode('move')" [disabled]="saving || opening" [attr.aria-pressed]="mode === 'move'"><mat-icon svgIcon="mat:swap_horiz"></mat-icon><strong>Mover Alumnos</strong><span>Trasladar un alumno a otro dojo.</span></button>
+  </div>
+  <section *ngIf="mode" class="panel">
+    <h2>{{ mode === 'create' ? 'Inscribir Alumnos' : mode === 'edit' ? 'Editar Alumnos' : 'Mover Alumnos' }}</h2>
+    <div *ngIf="academyError" class="notice error" role="alert">{{ academyError }} <button mat-button (click)="loadAcademies()">Reintentar</button></div>
+    <p *ngIf="loadingAcademies" role="status">Cargando dojos...</p>
+    <mat-form-field *ngIf="mode === 'create'" appearance="outline" class="dojo-field">
+      <mat-label>Dojo / Escuela</mat-label>
+      <input matInput [ngModel]="sourceSearch" (ngModelChange)="changeSource($event)" [matAutocomplete]="sourceAutocomplete" [disabled]="loadingAcademies || saving || opening" placeholder="Buscar dojo por nombre" autocomplete="off" />
+      <mat-autocomplete #sourceAutocomplete="matAutocomplete" [displayWith]="displayAcademy" autoActiveFirstOption (optionSelected)="selectSource($event.option.value)">
+        <mat-option *ngFor="let academy of sourceOptions" [value]="academy.id">{{ academy.name }}</mat-option>
+        <mat-option *ngIf="!sourceOptions.length" disabled>No se encontraron dojos activos.</mat-option>
+      </mat-autocomplete>
+    </mat-form-field>
+    <button *ngIf="mode === 'create' && sourceAcademyId" type="button" mat-flat-button color="primary" (click)="openStudent('student')" [disabled]="opening || saving">Crear alumno en {{ displayAcademy(sourceAcademyId) }}</button>
+    <form *ngIf="mode === 'edit' || mode === 'move'" [formGroup]="form" (ngSubmit)="search()" class="search-form">
+      <mat-form-field appearance="outline"><mat-label>Criterio de búsqueda</mat-label><mat-select formControlName="criterion" (selectionChange)="resetResults()" [disabled]="saving || opening"><mat-option value="documentNumber">Documento de identificación</mat-option><mat-option value="firstName">Nombres</mat-option><mat-option value="lastName">Apellidos</mat-option></mat-select></mat-form-field>
+      <mat-form-field appearance="outline"><mat-label>Datos a buscar</mat-label><input matInput formControlName="query" (input)="resetResults()" [readonly]="saving || opening" maxlength="100" /><mat-error>Ingresa al menos 2 caracteres.</mat-error></mat-form-field>
+      <button type="submit" mat-flat-button color="primary" [disabled]="form.invalid || searching || saving || opening"><mat-icon svgIcon="mat:search"></mat-icon>{{ searching ? 'Buscando...' : 'Buscar alumnos' }}</button>
+    </form>
+    <p *ngIf="opening" role="status">Cargando formulario...</p>
+    <div *ngIf="results as data" class="results">
+      <p role="status">{{ data.total }} alumno(s) encontrado(s).</p>
+      <div class="table-scroll"><table><thead><tr><th>Nombres</th><th>Apellidos</th><th>Documento</th><th>Dojo / Escuela</th><th></th></tr></thead><tbody>
+        <tr *ngFor="let student of data.items" [class.selected]="selected?.id === student.id"><td>{{ student.firstName }}</td><td>{{ student.lastName }}</td><td>{{ student.documentNumber }}</td><td><div *ngFor="let academy of student.academies">{{ academy.name }}</div></td><td><button type="button" mat-stroked-button color="primary" [disabled]="saving || opening" (click)="mode === 'edit' ? openStudent('edit', student) : selectStudent(student)">{{ mode === 'edit' ? 'Editar alumno' : selected?.id === student.id ? 'Seleccionado' : 'Seleccionar' }}</button></td></tr>
+        <tr *ngIf="!data.items.length"><td colspan="5">No se encontraron alumnos con los datos ingresados.</td></tr>
+      </tbody></table></div>
+      <mat-paginator [length]="data.total" [pageSize]="data.pageSize" [pageIndex]="data.page - 1" [hidePageSize]="true" [disabled]="saving || opening" (page)="changePage($event)"></mat-paginator>
+    </div>
+    <div *ngIf="mode === 'move' && selected" class="transfer-form">
+      <h3>Trasladar a {{ selected.firstName }} {{ selected.lastName }}</h3>
+      <p *ngIf="sourceAcademyId">Dojo de origen: <strong>{{ transferSourceName }}</strong></p>
+      <p *ngIf="!selected.academies.length" class="notice error" role="alert">El alumno no tiene un dojo de origen asociado y no puede trasladarse.</p>
+      <div *ngIf="selected.academies.length > 1">
+        <p>El alumno pertenece a varios dojos. Indica desde cuál deseas trasladarlo:</p>
+        <button *ngFor="let academy of selected.academies" type="button" mat-stroked-button [disabled]="saving" [attr.aria-pressed]="sourceAcademyId === academy.id" (click)="selectTransferSource(academy.id)">{{ academy.name }}</button>
+      </div>
+      <ng-container *ngIf="sourceAcademyId">
+      <mat-form-field appearance="outline" class="dojo-field"><mat-label>Dojo de destino</mat-label><input matInput [ngModel]="destinationSearch" (ngModelChange)="changeDestination($event)" [matAutocomplete]="destinationAutocomplete" [disabled]="saving" placeholder="Buscar dojo de destino" autocomplete="off" />
+        <mat-autocomplete #destinationAutocomplete="matAutocomplete" [displayWith]="displayAcademy" autoActiveFirstOption (optionSelected)="changeDestination($event.option.value)"><mat-option *ngFor="let academy of destinationOptions" [value]="academy.id">{{ academy.name }}</mat-option><mat-option *ngIf="!destinationOptions.length" disabled>No se encontraron dojos de destino.</mat-option></mat-autocomplete>
+      </mat-form-field>
+      <p *ngIf="destinationAcademyId">Destino: <strong>{{ displayAcademy(destinationAcademyId) }}</strong></p>
+      <button type="button" mat-flat-button color="primary" [disabled]="saving || searching || loadingAcademies || !destinationAcademyId" (click)="move()">{{ saving ? 'Moviendo alumno...' : 'Mover alumno' }}</button>
+      </ng-container>
+    </div>
+    <div *ngIf="error" class="notice error" role="alert">{{ error }}</div>
+    <div *ngIf="success" class="notice success" role="status">{{ success }}</div>
+  </section>
+</div>

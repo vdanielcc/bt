@@ -1,0 +1,20 @@
+<div class="kata-scroll">
+  <div class="kata-bracket" cdkDropListGroup [class.scores-only]="rounds.length === 1" [style.grid-template-columns]="'repeat(' + rounds.length + ', minmax(0, 1fr))'">
+    <section class="kata-round" *ngFor="let round of rounds; index as r; last as scoring">
+      <h4>{{ scoring ? 'Puntajes' : 'Eliminación ' + (r + 1) }}</h4>
+      <div class="kata-matches" [style.height.px]="height" [style.grid-template-rows]="'repeat(' + matches(round).length + ', 1fr)'">
+        <svg *ngIf="!scoring" class="connections" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path *ngFor="let match of matches(round); index as m" [attr.d]="connector(r, match, m)"></path></svg>
+        <div class="kata-position" *ngFor="let match of matches(round); index as m">
+          <article *ngIf="!scoring" class="kata-match">
+            <div class="corner aka" cdkDropList [cdkDropListDisabled]="!editable" [cdkDropListData]="location(r, m, 'top')" (cdkDropListDropped)="slotDropped.emit($event)"><div class="slot-drag" cdkDrag [cdkDragDisabled]="!canDrag(side(match, true))"><b>AKA</b><span><strong>{{ name(side(match, true)) }}</strong><small>{{ academy(side(match, true)) }}</small></span></div><ng-container *ngTemplateOutlet="actionsTemplate; context: { $implicit: side(match, true) }"></ng-container></div>
+            <div class="corner shiro" [class.bye]="bye(match)" cdkDropList [cdkDropListDisabled]="!editable" [cdkDropListData]="location(r, m, 'bottom')" (cdkDropListDropped)="slotDropped.emit($event)"><div class="slot-drag" cdkDrag [cdkDragDisabled]="!canDrag(side(match, false))"><b>SHIRO</b><span><strong>{{ name(side(match, false)) }}</strong><small>{{ academy(side(match, false)) }}</small></span></div><ng-container *ngTemplateOutlet="actionsTemplate; context: { $implicit: side(match, false) }"></ng-container></div>
+          </article>
+          <article *ngIf="scoring" class="score-card">
+            <div class="athlete" cdkDropList [cdkDropListDisabled]="!editable" [cdkDropListData]="location(r, m, 'top')" (cdkDropListDropped)="slotDropped.emit($event)"><div cdkDrag [cdkDragDisabled]="!canDrag(side(match, true))"><strong>{{ name(side(match, true)) }}</strong><small>{{ academy(side(match, true)) }}</small></div><ng-container *ngTemplateOutlet="actionsTemplate; context: { $implicit: side(match, true) }"></ng-container></div>
+            <div class="judges"><div *ngFor="let judge of judges"><b>{{ judge }}</b><span [attr.aria-label]="'Puntaje ' + judge"></span></div></div>
+          </article>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

@@ -1,0 +1,95 @@
+<main class="p-6 max-w-6xl mx-auto">
+  <h1 class="text-2xl font-semibold mb-2">Administración de eventos</h1>
+  <p class="text-secondary mb-6">Selecciona un evento para consultar y actualizar sus datos.</p>
+  <div *ngIf="loading" class="flex items-center gap-3 p-5"><mat-spinner diameter="32"></mat-spinner> Cargando eventos…</div>
+  <div *ngIf="error" class="card p-5 mb-5" role="alert">{{ error }} <button mat-button (click)="load()">Reintentar</button></div>
+  <section *ngIf="!loading && !error" class="card p-5 mb-5">
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Evento</mat-label>
+      <mat-select [value]="selectedId" (selectionChange)="select($event.value)" [disabled]="saving || readingPoster || readingRules">
+        <mat-option *ngFor="let event of events" [value]="event.id">{{ event.id }} — {{ event.name }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <p *ngIf="!events.length">No hay eventos registrados.</p>
+  </section>
+  <div *ngIf="loadingDetail" class="flex items-center gap-3 p-5"><mat-spinner diameter="32"></mat-spinner> Cargando detalle…</div>
+  <div *ngIf="detailError" class="card p-5 mb-5" role="alert">{{ detailError }}
+    <button *ngIf="!detail" mat-button (click)="select(selectedId)">Reintentar</button>
+  </div>
+  <a *ngIf="detail && !loadingDetail" mat-stroked-button class="mb-4" [routerLink]="['/admin/events', selectedId, 'pricing']">Tarifas de inscripción</a>
+  <form *ngIf="detail && !loadingDetail" class="card p-6" [formGroup]="form" (ngSubmit)="save()">
+    <a mat-stroked-button class="mb-4" [routerLink]="['/admin/events', selectedId, 'categories']">Ver Categorías</a>
+    <h2 class="text-xl font-medium mb-2">{{ detail.id }} — {{ detail.name }}</h2>
+    <p class="text-secondary mb-6">Estado: {{ detail.status }} · Áreas: {{ detail.numberOfAreas }} · Competidores: {{ detail.numberOfCompetitors }}</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-2">
+      <mat-form-field appearance="outline"><mat-label>Máximo de categorías por deportista</mat-label><input matInput type="number" min="0" max="2147483647" step="1" formControlName="maxCategoriesPerRegistration"><mat-hint>0: sin límite de categorías.</mat-hint><mat-error>Ingresa un entero igual o mayor a cero.</mat-error></mat-form-field>
+      <mat-form-field appearance="outline"><mat-label>Días de competencia</mat-label><input matInput type="number" min="1" max="365" step="1" formControlName="days"><mat-error>Ingresa entre 1 y 365 días.</mat-error></mat-form-field>
+      <mat-form-field *ngFor="let field of textFields" appearance="outline">
+        <mat-label>{{ field.label }}</mat-label><input matInput [formControlName]="field.key" [required]="field.required">
+        <mat-error>Este campo es obligatorio.</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline"><mat-label>Asociación deportiva</mat-label>
+        <mat-select formControlName="asociationType">
+          <mat-option [value]="''">Sin asociación</mat-option>
+          <mat-option *ngFor="let association of associations" [value]="association.code">{{ association.code }} — {{ association.description }}</mat-option>
+          <mat-option *ngIf="detail.asociationType && !associationsContain(detail.asociationType)" [value]="detail.asociationType">{{ detail.asociationType }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline"><mat-label>Academia organizadora principal</mat-label>
+        <mat-select formControlName="academyId"><mat-option *ngFor="let option of academies" [value]="option.id">{{ option.name }}</mat-option></mat-select>
+        <mat-error>Selecciona una academia.</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline"><mat-label>Academias coorganizadoras</mat-label>
+        <mat-select formControlName="coOrganizerAcademyIds" multiple>
+          <ng-container *ngFor="let option of academies"><mat-option *ngIf="option.id !== form.controls.academyId.value" [value]="option.id">{{ option.name }}</mat-option></ng-container>
+        </mat-select><mat-hint>Administran el evento junto a la academia principal.</mat-hint>
+      </mat-form-field>
+      <mat-form-field appearance="outline"><mat-label>Tipo de evento</mat-label>
+        <mat-select formControlName="typeId"><mat-option *ngFor="let option of types" [value]="option.id">{{ option.name }}</mat-option></mat-select>
+        <mat-error>Selecciona un tipo.</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline"><mat-label>Comuna</mat-label>
+        <mat-select formControlName="communeId"><mat-option *ngFor="let option of communes" [value]="option.id">{{ option.name }}</mat-option></mat-select>
+        <mat-error>Selecciona una comuna.</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline"><mat-label>Valor de la entrada</mat-label><input matInput type="number" min="0" step="1" formControlName="feeTicket">
+        <mat-error>Ingresa un entero igual o mayor a cero.</mat-error>
+      </mat-form-field>
+      <mat-form-field *ngFor="let field of dateFields" appearance="outline">
+        <mat-label>{{ field.label }}</mat-label>
+        <input #dateTimeInput matInput type="datetime-local" step="60" [formControlName]="field.key" [required]="field.required">
+        <button mat-icon-button matSuffix type="button" [disabled]="saving"
+          [attr.aria-label]="'Seleccionar fecha y hora de ' + field.label" (click)="openDateTimePicker(dateTimeInput)">
+          <mat-icon svgIcon="mat:event"></mat-icon>
+        </button>
+        <mat-error>Ingresa una fecha válida.</mat-error>
+      </mat-form-field>
+    </div>
+    <section class="border-t pt-5 mt-3">
+      <h3 class="font-medium mb-3">Bases del evento</h3>
+      <label for="event-rules-pdf" class="block mb-2">Seleccionar bases en PDF</label>
+      <input id="event-rules-pdf" type="file" accept=".pdf,application/pdf" [disabled]="saving || readingRules" (change)="onRulesDocument($event)">
+      <p class="text-secondary text-sm mt-2">Solo PDF. Máximo 15 MB. Se guarda al actualizar el evento.</p>
+      <p *ngIf="rulesFileName" class="mt-2">Archivo seleccionado: {{ rulesFileName }}</p>
+      <p *ngIf="readingRules" role="status" class="mt-2">Leyendo PDF…</p>
+      <p *ngIf="rulesError" role="alert" class="mt-2">{{ rulesError }}</p>
+      <a *ngIf="rulesUrl" mat-stroked-button class="mt-3" [href]="rulesUrl" target="_blank" rel="noopener">Ver bases actuales</a>
+    </section>
+    <section class="border-t pt-5 mt-3">
+      <h3 class="font-medium mb-3">Póster del evento</h3>
+      <div class="flex flex-wrap items-start gap-5">
+        <img *ngIf="posterPreview" [src]="posterPreview" alt="Póster del evento" class="w-48 max-h-72 object-contain rounded-lg border" (error)="posterPreview = ''">
+        <div>
+          <input #posterFile hidden type="file" accept="image/jpeg,image/png" (change)="onPoster($event)">
+          <button mat-stroked-button type="button" [disabled]="saving || readingPoster" (click)="posterFile.click()"><mat-icon svgIcon="mat:upload"></mat-icon> Seleccionar póster</button>
+          <p class="text-secondary text-sm mt-2">JPG o PNG. Máximo 3 MB. Se guarda al actualizar el evento.</p>
+          <p *ngIf="readingPoster" class="mt-2">Leyendo imagen…</p>
+          <p *ngIf="posterError" role="alert" class="mt-2">{{ posterError }}</p>
+        </div>
+      </div>
+    </section>
+    <div class="flex justify-end mt-6">
+      <button mat-flat-button color="primary" type="submit" [disabled]="saving || readingPoster || readingRules">{{ saving ? 'Guardando…' : 'Actualizar evento' }}</button>
+    </div>
+  </form>
+</main>

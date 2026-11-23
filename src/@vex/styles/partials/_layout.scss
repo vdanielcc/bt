@@ -68,6 +68,14 @@
 }
 
 .vex-layout-toolbar-fixed {
+  .vex-toolbar:has(.impersonation-banner) ~ .vex-layout-content {
+    margin-top: calc(var(--vex-toolbar-height) + 64px);
+
+    @screen lg {
+      margin-top: calc(var(--vex-toolbar-height) + var(--vex-navigation-height) + 64px);
+    }
+  }
+
   .vex-toolbar {
     position: fixed;
     width: var(--vex-toolbar-width);

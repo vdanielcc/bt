@@ -1,0 +1,18 @@
+Este robots.txt debe combinarse con el archivo robots.txt de la raiz del dominio:
+https://budotournaments.net/robots.txt
+
+Conservar las reglas de otras aplicaciones del mismo dominio.
+No instalarlo solamente en app/: los buscadores leen robots.txt desde la raiz.
+La aplicacion y su sitemap se instalan en /app/.
+
+Para el favicon del dominio raiz, si usa la misma marca Budo Tournaments,
+instalar tambien favicon.ico y favicon.png en la raiz y actualizar su cabecera:
+<link rel="icon" href="/favicon.png?v=bte-seo-v1" sizes="96x96" type="image/png">
+La cabecera de app/ ya incluye todos los iconos. No reemplazar index.html de la raiz
+con el de la aplicacion: tienen rutas de instalacion distintas.
+
+Para el favicon del dominio raiz, si usa la misma marca Budo Tournaments,
+instalar tambien favicon.ico y favicon.png en la raiz y actualizar su cabecera:
+<link rel="icon" href="/favicon.png?v=bte-seo-v1" sizes="96x96" type="image/png">
+La cabecera de app/ ya incluye todos los iconos. No reemplazar index.html de la raiz
+con el de la aplicacion: tienen rutas de instalacion distintas.

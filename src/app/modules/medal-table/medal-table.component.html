@@ -1,0 +1,80 @@
+<main class="medal-page" [class.external]="display">
+  <header class="heading">
+    <div class="brand" *ngIf="display"><img src="assets/img/logo/budo-tournaments.png" alt="Budo Tournaments"></div>
+    <div><h1>{{ display ? (state?.event?.name || 'Medallero') : 'Medallero' }}</h1>
+      <p *ngIf="state">{{ state.event.eventDateStart | date:'dd/MM/yyyy' }} — {{ state.event.eventDateEnd | date:'dd/MM/yyyy' }}</p></div>
+    <div class="actions"><button mat-stroked-button (click)="load()" [disabled]="busy || !eventId">Actualizar</button>
+      <button mat-stroked-button *ngIf="display" (click)="fullscreen()">Pantalla completa</button></div>
+  </header>
+  <mat-card *ngIf="!display" class="panel">
+    <mat-form-field appearance="outline"><mat-label>Campeonato</mat-label>
+      <mat-select [(ngModel)]="eventId" (selectionChange)="load()" [disabled]="busy">
+        <mat-option *ngFor="let event of events" [value]="event.id">{{ event.name }}</mat-option>
+      </mat-select></mat-form-field>
+    <p *ngIf="!events.length">No hay campeonatos accesibles para gestionar.</p>
+  </mat-card>
+  <p role="alert" *ngIf="error && !state">{{ error }}</p>
+  <p role="status" class="offline" *ngIf="offline">Sin confirmación actual del servidor. Última información disponible: {{ state?.serverConfirmedAt | date:'dd/MM/yyyy HH:mm' }}. La edición está deshabilitada; puede exportar el respaldo JSON.</p>
+  <ng-container *ngIf="state as s">
+    <mat-card class="panel" *ngIf="!display">
+      <h2>{{ s.event.name }}</h2>
+      <div class="actions">
+        <mat-checkbox [(ngModel)]="isPublic" [disabled]="busy || offline">Medallero público</mat-checkbox>
+        <mat-form-field appearance="outline"><mat-label>Cantidad de bronces</mat-label><input matInput type="number" min="1" max="10" [(ngModel)]="bronzeCount" [disabled]="busy || offline"></mat-form-field>
+        <button mat-flat-button color="primary" (click)="saveConfig()" [disabled]="busy || offline">Guardar configuración</button>
+        <a mat-stroked-button [routerLink]="['/medallero', eventId, 'pantalla']" target="_blank" rel="noopener">Abrir pantalla externa</a>
+      </div>
+      <p>{{ s.isPublic ? 'Lectura pública habilitada.' : 'Privado: solo administrador y organizadores autorizados.' }}</p>
+      <div class="actions">
+        <button mat-stroked-button (click)="synchronize()" [disabled]="busy || offline">Sincronizar resultados</button>
+        <button mat-stroked-button (click)="backup()" [disabled]="busy">Exportar JSON</button>
+        <button mat-stroked-button (click)="restoreFile.click()" [disabled]="busy || offline">Restaurar JSON</button>
+        <input #restoreFile type="file" accept="application/json,.json" hidden (change)="restore($event)">
+        <button mat-button color="warn" (click)="clear()" [disabled]="busy || offline">Eliminar correcciones</button>
+      </div>
+    </mat-card>
+    <section class="leader" *ngIf="s.ranking[0] as leader"><span>Líder actual</span><h2>{{ leader.name }}</h2><strong>{{ leader.total }} medallas</strong></section>
+    <mat-card class="panel ranking">
+      <div class="heading"><h2>Clasificación</h2><div class="actions"><button mat-button (click)="exportReport('pdf')">PDF</button><button mat-button (click)="exportReport('excel')">Excel</button></div></div>
+      <div class="table-scroll"><table><thead><tr><th>Pos.</th><th>Club / dojo</th><th class="gold">Oro</th><th class="silver">Plata</th><th class="bronze">Bronce</th><th>Total</th></tr></thead>
+        <tbody><tr *ngFor="let row of s.ranking; index as index"><td>{{ index + 1 }}</td><td class="club"><img *ngIf="row.logo" [src]="api.logo(row.academyId, s.serverConfirmedAt)" [alt]="row.name" (error)="$any($event.target).hidden = true"><strong>{{ row.name }}</strong></td><td class="gold">{{ row.gold }}</td><td class="silver">{{ row.silver }}</td><td class="bronze">{{ row.bronze }}</td><td><strong>{{ row.total }}</strong></td></tr></tbody>
+      </table></div>
+      <p *ngIf="!s.ranking.length">Todavía no hay podios válidos publicados.</p>
+      <p class="totals">{{ s.ranking.length }} clubes con medallas</p>
+      <p class="totals"><span class="gold">{{ totals.gold }} oros</span> · <span class="silver">{{ totals.silver }} platas</span> · <span class="bronze">{{ totals.bronze }} bronces</span> · <strong>{{ totals.total }} medallas</strong></p>
+    </mat-card>
+    <mat-card *ngIf="!display" class="panel">
+      <h2>Clubes y logos</h2>
+      <p>Los cambios actualizan los datos maestros de la academia y se reflejan en los demás campeonatos.</p>
+      <div class="podium-form">
+        <mat-form-field appearance="outline"><mat-label>Club / dojo</mat-label><mat-select [(ngModel)]="clubId" (selectionChange)="selectClub()" [disabled]="busy || offline"><mat-option *ngFor="let club of clubs" [value]="club.academyId">{{ club.academyName }}</mat-option></mat-select></mat-form-field>
+        <ng-container *ngIf="clubId">
+          <mat-form-field appearance="outline"><mat-label>Nombre</mat-label><input matInput [(ngModel)]="clubName" maxlength="100" [disabled]="busy || offline"></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Comuna / ciudad</mat-label><mat-select [(ngModel)]="communeId" [disabled]="busy || offline"><mat-option *ngFor="let commune of communes" [value]="commune.id">{{ commune.name }}</mat-option></mat-select></mat-form-field>
+          <button mat-stroked-button (click)="logoFile.click()" [disabled]="busy || offline">Seleccionar logo</button>
+          <input #logoFile hidden type="file" accept="image/png,image/jpeg" (change)="selectLogo($event)">
+          <img *ngIf="logoBase64" [src]="logoBase64" alt="Vista previa del logo" width="60">
+          <button mat-flat-button color="primary" (click)="saveClub()" [disabled]="busy || offline">Guardar datos maestros</button>
+        </ng-container>
+      </div>
+    </mat-card>
+    <mat-card *ngIf="!display" class="panel">
+      <h2>Podio por categoría</h2>
+      <mat-form-field appearance="outline"><mat-label>Categoría</mat-label><mat-select [(ngModel)]="categoryId" (selectionChange)="selectCategory()" [disabled]="busy || offline"><mat-option *ngFor="let category of s.categories" [value]="category.categoryId">{{ category.name }}</mat-option></mat-select></mat-form-field>
+      <div class="podium-form" *ngIf="categoryId">
+        <a mat-stroked-button [routerLink]="['/scoreboard/events', eventId, 'categories', categoryId, 'results']">Resultados del Scoreboard</a>
+        <mat-form-field appearance="outline" *ngFor="let award of awards; index as index"><mat-label>{{ medalName(award.medal) }} {{ award.medal === 'bronze' ? index - 1 : '' }}</mat-label>
+          <mat-select [(ngModel)]="award.competitorId" [disabled]="busy || offline"><mat-option *ngFor="let entrant of entrants" [value]="entrant.competitorId">{{ entrant.name }} · {{ entrant.academyName }}</mat-option></mat-select>
+        </mat-form-field>
+        <button mat-flat-button color="primary" (click)="savePodium()" [disabled]="busy || offline">Guardar corrección manual</button>
+      </div>
+      <article *ngFor="let podium of s.podiums" class="podium-record">
+        <h3>{{ categoryName(podium.categoryId) }} · {{ podium.source === 'manual' ? 'Corrección manual' : 'Resultado automático' }}</h3>
+        <p *ngIf="podium.published === false">Pendiente de ajustar bronces; este podio no se cuenta en la clasificación.</p>
+        <p *ngFor="let award of podium.awards">{{ medalName(award.medal) }}: {{ award.name }}</p>
+        <button mat-button *ngIf="podium.source === 'manual'" (click)="removeManual(podium.categoryId)" [disabled]="busy || offline">Volver al resultado automático</button>
+        <button mat-button color="warn" *ngIf="podium.source === 'manual'" (click)="removeManual(podium.categoryId)" [disabled]="busy || offline">Eliminar corrección</button>
+      </article>
+    </mat-card>
+  </ng-container>
+</main>

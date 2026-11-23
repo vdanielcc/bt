@@ -1,0 +1,72 @@
+<vex-page-layout>
+  <vex-page-layout-header class="pb-16 flex flex-col items-start justify-center">
+    <div class="container w-full"><h1 class="title mt-0 mb-1">Resumen de inscripciones</h1><p>{{ summary?.eventName }}</p></div>
+  </vex-page-layout-header>
+  <vex-page-layout-content class="container -mt-6">
+    <a mat-stroked-button [routerLink]="['/campeonatos/invitaciones', eventId]">Volver al evento</a>
+    <div *ngIf="loading" class="state"><mat-spinner diameter="40"></mat-spinner><span>Cargando resumen...</span></div>
+    <div *ngIf="!loading && loadError" class="notice error" role="alert">{{ loadError }} <button mat-button (click)="load()">Reintentar</button></div>
+    <div *ngIf="success" class="notice success" role="status">{{ success }}</div>
+    <div *ngIf="error" class="notice error" role="alert">{{ error }}</div>
+    <ng-container *ngIf="!loading && !loadError && summary as data">
+      <div class="export-actions">
+        <button type="button" mat-stroked-button color="primary" (click)="downloadSummary('excel')" [disabled]="saving || removingId !== null || !!exporting"><mat-icon svgIcon="mat:table_view"></mat-icon>{{ exporting === 'excel' ? 'Descargando...' : 'Descargar Excel' }}</button>
+        <button type="button" mat-stroked-button color="primary" (click)="downloadSummary('pdf')" [disabled]="saving || removingId !== null || !!exporting"><mat-icon svgIcon="mat:picture_as_pdf"></mat-icon>{{ exporting === 'pdf' ? 'Descargando...' : 'Descargar PDF' }}</button>
+      </div>
+      <mat-card class="summary-card">
+        <h2>{{ data.academyName }}</h2>
+        <bte-registration-counts [counts]="data"></bte-registration-counts>
+        <bte-event-payment-ledger [eventId]="eventId" [academyId]="academyId" [entries]="data.entries"></bte-event-payment-ledger>
+        <div *ngIf="!data.pricingComplete" class="notice error">Hay inscripciones sin tarifa configurada. Contacta al organizador antes de pagar.</div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>#</th><th>Deportista / Equipo</th><th>Inscripciones deportivas</th><th>Monto</th><th>Acciones</th></tr></thead>
+          <tbody><tr *ngFor="let entry of data.entries; index as i">
+            <td>{{ i + 1 }}</td><td><strong>{{ entry.name }}</strong>
+              <small class="block"><span *ngIf="entry.isTeam">Equipo</span><span *ngIf="entry.isAthlete">Deportista</span><span *ngIf="entry.isAthlete && entry.isCoach"> / </span><span *ngIf="entry.isCoach">Coach</span></small><bte-competitor-charge [eventId]="eventId" [competitorId]="entry.competitorId"></bte-competitor-charge><ul><li *ngFor="let category of entry.categories">{{ category.name }}</li></ul></td>
+            <td>{{ entry.sportingRegistrations ?? "—" }}<small *ngIf="entry.coachRegistrations" class="block">Registros de coach: {{ entry.coachRegistrations }}</small></td><td class="amount">{{ entry.amount == null ? 'Por definir' : (entry.amount | currency:'CLP':'symbol-narrow':'1.0-0') }}<small *ngIf="entry.paidAmount != null" class="block">Pagado: {{ entry.paidAmount | currency:'CLP':'symbol-narrow':'1.0-0' }} · Saldo: {{ entry.balance == null ? 'Por definir' : (entry.balance | currency:'CLP':'symbol-narrow':'1.0-0') }}</small></td>
+            <td class="row-actions"><button type="button" mat-mini-fab color="warn" class="delete-registration"
+              [disabled]="saving || preparingBatch || removingId !== null" (click)="removeRegistration(entry)"
+              [attr.aria-label]="'Eliminar inscripción de ' + entry.name"
+              [attr.title]="'Eliminar inscripción de ' + entry.name">
+              <mat-icon svgIcon="mat:delete"></mat-icon>
+            </button></td>
+          </tr><tr *ngIf="!data.entries.length"><td colspan="5">Todavía no hay inscripciones para este evento.</td></tr></tbody>
+          <tfoot><tr><td colspan="3">Total inscripción</td><td class="amount">{{ data.pricingComplete ? (data.total | currency:'CLP':'symbol-narrow':'1.0-0') : 'Por definir' }}</td><td></td></tr></tfoot>
+        </table></div>
+      </mat-card>
+      <mat-card class="summary-card">
+        <h2>Comprobantes de transferencia</h2>
+        <div class="totals">
+          <div><span>Total inscripción</span><strong>{{ data.pricingComplete ? (data.total | currency:'CLP':'symbol-narrow':'1.0-0') : 'Por definir' }}</strong></div>
+          <div><span>Pagado y aprobado</span><strong>{{ data.approvedAmount | currency:'CLP':'symbol-narrow':'1.0-0' }}</strong></div>
+          <div><span>Pendiente de aprobación</span><strong>{{ data.pendingAmount | currency:'CLP':'symbol-narrow':'1.0-0' }}</strong></div>
+          <div><span>Saldo pendiente</span><strong>{{ data.pricingComplete ? (data.balance | currency:'CLP':'symbol-narrow':'1.0-0') : 'Por definir' }}</strong></div>
+        </div>
+        <p class="muted">El saldo se actualiza cuando el organizador aprueba los comprobantes.</p>
+        <p *ngIf="data.pricingComplete && data.creditAmount">Saldo a favor de la academia: {{ data.creditAmount | currency:'CLP':'symbol-narrow':'1.0-0' }}. Su devolución o aplicación requiere revisión del organizador.</p>
+        <h3>Datos de pago</h3>
+        <div *ngIf="data.methodOfPayment; else missingPayment" class="payment-instructions" [innerHTML]="data.methodOfPayment"></div>
+        <ng-template #missingPayment><p>El organizador aún no ha informado los datos de transferencia.</p></ng-template>
+        <p>Confirma el monto y los datos de transferencia con el organizador antes de pagar.</p>
+        <bte-tariff-batches [eventId]="eventId" [academyId]="academyId" [entries]="data.entries" [disabled]="saving || preparingBatch || removingId !== null" (selection)="selectBatch($event)"></bte-tariff-batches>
+        <form *ngIf="data.entries.length && (data.pricingComplete || batchesEnabled)" (submit)="$event.preventDefault(); submit()">
+          <p *ngIf="batchesEnabled && !selectedBatch" class="muted" role="status">Marca los deportistas que cubre este pago e ingresa el total del grupo. Al enviar los comprobantes se creará el lote automáticamente. También puedes seleccionar un lote sin pago.</p>
+          <mat-form-field appearance="outline"><mat-label>Monto transferido (CLP)</mat-label><input matInput type="number" min="1" step="1" [formControl]="amount" [readonly]="preparingBatch"><mat-hint *ngIf="batchesEnabled && selectedBatch">Puedes abonar hasta el saldo disponible del lote seleccionado.</mat-hint><mat-error>Ingresa un monto positivo, sin decimales.</mat-error></mat-form-field>
+          <div><input #receiptInput type="file" hidden multiple accept=".jpg,.jpeg,.png,.pdf" (change)="addFiles($event)" [disabled]="saving || preparingBatch">
+            <button type="button" mat-stroked-button (click)="receiptInput.click()" [disabled]="saving || preparingBatch">Agregar comprobantes</button><p class="muted">JPG, PNG o PDF. Hasta 5 archivos de 5 MB cada uno por transferencia.</p></div>
+          <ul class="files"><li *ngFor="let file of files; index as i"><span>{{ file.name }}</span><button type="button" mat-button (click)="removeFile(i)" [disabled]="saving || preparingBatch" [attr.aria-label]="'Quitar ' + file.name">Quitar</button></li></ul>
+          <button type="submit" mat-flat-button color="primary" [disabled]="saving || preparingBatch || removingId !== null || amount.invalid || !files.length">{{ preparingBatch ? 'Preparando pago...' : saving ? 'Enviando...' : 'Enviar comprobantes' }}</button>
+        </form>
+      </mat-card>
+      <mat-card class="summary-card" *ngIf="data.transfers.length"><h2>Transferencias registradas</h2>
+        <div class="transfer" *ngFor="let transfer of data.transfers">
+          <div><strong>{{ transfer.amount | currency:'CLP':'symbol-narrow':'1.0-0' }}</strong><span>{{ transfer.createdAt | date:'dd-MM-yyyy HH:mm' }}</span><span>{{ transferStatus(transfer) }}</span></div>
+          <p *ngIf="transfer.reviewReason">Motivo del rechazo: {{ transfer.reviewReason }}</p>
+          <p *ngIf="transfer.tariffBatchId">Lote de inscripciones {{ transfer.tariffBatchId }}</p>
+          <button type="button" mat-button color="primary" *ngFor="let receipt of transfer.receipts; index as i" (click)="download(receipt)">Descargar comprobante {{ i + 1 }}</button>
+        </div>
+      </mat-card>
+      <mat-card class="summary-card"><h2>Pago en línea</h2><p>Próximamente podrás pagar mediante una pasarela de pago.</p><button mat-stroked-button disabled>Pasarela de pago — Próximamente</button></mat-card>
+    </ng-container>
+  </vex-page-layout-content>
+</vex-page-layout>

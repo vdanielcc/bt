@@ -1,0 +1,42 @@
+<mat-card class="payment-review">
+  <h2>Total calculado y comprobantes por dojo</h2>
+  <mat-form-field appearance="outline" class="academy-select"><mat-label>Dojo / escuela inscrita</mat-label>
+    <input matInput [formControl]="academy" [matAutocomplete]="dojo" placeholder="Escribe para buscar">
+    <mat-autocomplete #dojo="matAutocomplete" [displayWith]="displayAcademy" [requireSelection]="false">
+      <mat-option *ngFor="let option of options" [value]="option">{{ option.name }}</mat-option>
+      <mat-option *ngIf="!options.length" disabled>No se encontraron dojos</mat-option>
+    </mat-autocomplete>
+  </mat-form-field>
+  <p *ngIf="loading" role="status">Cargando...</p>
+  <p *ngIf="error" class="error" role="alert">{{ error }}</p><p *ngIf="success" class="success" role="status">{{ success }}</p>
+  <ng-container *ngIf="summary as data">
+    <bte-event-payment-ledger [eventId]="eventId" [academyId]="data.academyId" [entries]="data.entries" [canReconcile]="true" (changed)="refresh()"></bte-event-payment-ledger>
+    <bte-registration-counts [counts]="data"></bte-registration-counts>
+    <button mat-button type="button" (click)="refresh()" [disabled]="saving">Actualizar pagos</button>
+    <div class="totals">
+      <div>Total inscripción<strong>{{ data.pricingComplete ? (data.total | currency:'CLP':'symbol-narrow':'1.0-0') : 'Por definir' }}</strong></div>
+      <div>Pagado y aprobado<strong>{{ data.approvedAmount | currency:'CLP':'symbol-narrow':'1.0-0' }}</strong></div>
+      <div>Pendiente de aprobación<strong>{{ data.pendingAmount | currency:'CLP':'symbol-narrow':'1.0-0' }}</strong></div>
+      <div *ngIf="data.creditAmount">Sobrepago / saldo a favor<strong>{{ data.creditAmount | currency:'CLP':'symbol-narrow':'1.0-0' }}</strong></div>
+      <div>Saldo pendiente<strong>{{ data.pricingComplete ? (data.balance | currency:'CLP':'symbol-narrow':'1.0-0') : 'Por definir' }}</strong></div>
+    </div>
+    <p *ngIf="!data.pricingComplete" class="error">Hay inscripciones sin tarifa o con precios históricos pendientes de conciliar.</p>
+    <div class="table-wrap"><table><thead><tr><th>Inscrito / equipo</th><th>Categorías / tickets</th><th>Monto</th></tr></thead>
+      <tbody><tr *ngFor="let entry of data.entries"><td>{{ entry.name }}<small><span *ngIf="entry.isTeam">Equipo</span><span *ngIf="entry.isAthlete">Deportista</span><span *ngIf="entry.isAthlete && entry.isCoach"> / </span><span *ngIf="entry.isCoach">Coach</span></small><bte-competitor-charge [eventId]="eventId" [competitorId]="entry.competitorId" [canRecalculate]="true"></bte-competitor-charge></td><td><div *ngFor="let category of entry.categories">{{ category.name }}</div></td><td>{{ entry.amount == null ? 'Por definir' : (entry.amount | currency:'CLP':'symbol-narrow':'1.0-0') }}<small *ngIf="entry.paidAmount != null">Pagado: {{ entry.paidAmount | currency:'CLP':'symbol-narrow':'1.0-0' }}</small></td></tr></tbody>
+    </table></div>
+    <h3>Detalle de pagos</h3><p *ngIf="!data.transfers.length">Este dojo todavía no ha enviado comprobantes.</p>
+    <section class="transfer" *ngFor="let transfer of data.transfers">
+      <div class="transfer-heading"><strong>{{ transfer.amount | currency:'CLP':'symbol-narrow':'1.0-0' }}</strong><span>{{ transfer.createdAt | date:'dd-MM-yyyy HH:mm' }}</span><strong>{{ status(transfer) }}</strong></div>
+      <p *ngIf="transfer.reviewReason">Motivo del rechazo: {{ transfer.reviewReason }}</p>
+      <p *ngIf="transfer.tariffBatchId">Lote de inscripciones {{ transfer.tariffBatchId }}</p>
+      <div *ngFor="let file of transfer.receipts; index as i"><span>Comprobante {{ i + 1 }}</span>
+        <button mat-button type="button" (click)="receipt(file, true)">Ver comprobante</button><button mat-button type="button" (click)="receipt(file, false)">Descargar</button>
+      </div>
+      <ng-container *ngIf="!transfer.approved && transfer.status !== 'REJECTED'">
+        <mat-form-field appearance="outline" class="reason"><mat-label>Motivo del rechazo</mat-label><textarea matInput maxlength="1000" [value]="reasons[transfer.reference] || ''" (input)="setReason(transfer.reference, $event)" [disabled]="saving"></textarea></mat-form-field>
+        <div><button mat-flat-button color="primary" type="button" (click)="review(transfer, 'APPROVED')" [disabled]="saving">Aprobar transferencia</button>
+          <button mat-stroked-button color="warn" type="button" (click)="review(transfer, 'REJECTED')" [disabled]="saving">Rechazar transferencia</button></div>
+      </ng-container>
+    </section>
+  </ng-container>
+</mat-card>

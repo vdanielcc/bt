@@ -12,6 +12,33 @@
   height: var(--vex-toolbar-height);
 }
 
+.impersonation-banner {
+  height: 64px;
+  button { flex-shrink: 0; }
+}
+
 a {
   text-decoration: none;
+}
+
+.support-button {
+  background-color: #dc2626 !important;
+  color: white !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+}
+
+.support-button:hover {
+  background-color: #b91c1c !important;
+}
+
+.support-button__icon {
+  width: 18px !important;
+  height: 18px !important;
+  margin: 0 !important;
+  flex: 0 0 18px;
+  line-height: 18px;
+  vertical-align: middle;
 }

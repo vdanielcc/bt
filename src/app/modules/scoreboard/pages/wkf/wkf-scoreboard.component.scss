@@ -1,0 +1,119 @@
+:host { display: block; } main { padding: 20px; } header, footer, .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; } header h1 { font-size: 24px; } .fighters { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; } section { padding: 24px; border-radius: 12px; color: white; } section.aka { background: #a91526; } section.ao { background: #0957b7; } section.active { outline: 4px solid #f9c846; } .score { display: block; font-size: clamp(64px, 10vw, 140px); text-align: center; } .clock { font-size: clamp(40px, 6vw, 90px); text-align: center; font-variant-numeric: tabular-nums; } .critical, .error { color: #d52337; } .error { padding: 12px; background: #fff0f0; } .winner { font-size: 28px; text-align: center; padding: 16px; background: #fff2b2; color: #352800; } input, select { padding: 8px; border: 1px solid #aab; border-radius: 5px; color: #142033; background: white; max-width: 100%; } label { display: flex; flex-direction: column; gap: 4px; } .judges { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; width: 100%; } .judges input { width: 100%; box-sizing: border-box; } .controls > div { display: flex; gap: 8px; flex-wrap: wrap; } .controls .judges { display: grid; } footer { padding: 16px; background: #edf1f7; color: #142033; } footer > div { display: flex; flex-wrap: wrap; gap: 8px; } .public-display { min-height: 100vh; background: #070c19; color: white; } .badge { font-weight: bold; color: #fff09b; } @media(max-width: 750px) { .fighters { grid-template-columns: 1fr; } section { padding: 16px; } }
+:host .fighters.single { grid-template-columns: 1fr; }
+header .category-picker { flex: 1 1 320px; min-width: 0; max-width: 100%; }
+.category-picker select { width: 100%; min-width: 0; }
+.category-picker option { background-color: #fff; color: #142033; }
+.category-picker .category-completed { background-color: #ffe0e0; color: #861d2b; }
+main:not(.public-display) > .clock { line-height: 1.15; margin-bottom: 16px; }
+main:not(.public-display) .fighters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+main:not(.public-display) .fighters section { display: flex; flex-direction: column; min-width: 0; }
+main:not(.public-display) .competitor-name,
+main:not(.public-display) .competitor-academy { overflow-wrap: anywhere; }
+main:not(.public-display) .score { flex: 0 0 auto; line-height: 1.15; margin: 16px 0 24px; font-variant-numeric: tabular-nums; }
+main:not(.public-display) .controls { flex: 0 0 auto; margin-top: auto; padding-top: 8px; }
+main:not(.public-display) .penalty-controls { flex-wrap: nowrap; }
+main:not(.public-display) .fighters section.kumite-panel {
+  display: grid;
+  grid-template-columns: minmax(190px, 1fr) minmax(100px, .7fr);
+  grid-template-rows: auto auto 1fr auto auto;
+  column-gap: 20px;
+  align-content: start;
+}
+main:not(.public-display) .kumite-panel > .competitor-name { grid-column: 1 / -1; grid-row: 1; }
+main:not(.public-display) .kumite-panel > .competitor-academy { grid-column: 1 / -1; grid-row: 2; }
+main:not(.public-display) .kumite-panel > .controls {
+  grid-column: 1;
+  grid-row: 3 / 6;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  align-items: center;
+  gap: 12px 8px;
+  margin: 0;
+  padding-top: 16px;
+}
+main:not(.public-display) .kumite-panel .award-control,
+main:not(.public-display) .kumite-panel .penalty-controls { grid-column: 1 / -1; }
+main:not(.public-display) .kumite-panel > .score { grid-column: 2; grid-row: 3; align-self: start; margin: 16px 0; font-size: clamp(64px, 8vw, 120px); }
+main:not(.public-display) .kumite-panel > .penalty-controls { grid-column: 1 / -1; grid-row: 6; gap: clamp(4px, 1vw, 12px); overflow-x: auto; }
+.controls .mark-toggle { background: #fff; color: #142033; border-color: #fff; }
+.controls .mark-toggle.mark-selected { background: #f9c846; color: #231b00; border-color: #f9c846; }
+main:not(.public-display) .kumite-panel > .badge { grid-column: 2; grid-row: 4; text-align: center; margin: 0 0 8px; }
+main:not(.public-display) .kumite-panel > .competitor-mark { grid-column: 2; grid-row: 5; text-align: center; font-weight: 700; margin: 0; }
+@media (max-width: 900px) {
+  main:not(.public-display) .fighters { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 480px) {
+  main:not(.public-display) .fighters section.kumite-panel { grid-template-columns: minmax(156px, 1fr) minmax(64px, .7fr); column-gap: 8px; }
+  main:not(.public-display) .kumite-panel .award-control { font-size: 12px; }
+  main:not(.public-display) .kumite-panel .award-control button { min-width: 32px; padding: 0 6px; }
+}
+.controls .award-control { align-items: center; flex-wrap: nowrap; gap: 6px; }
+.award-control button { min-width: 40px; padding: 0 10px; font-size: 20px; }
+.award-control span { white-space: nowrap; }
+.confirmed-winner { animation: confirmed-winner-blink 1.2s step-end infinite; }
+@keyframes confirmed-winner-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .15; }
+}
+.penalty-controls { display: flex; flex-wrap: nowrap; gap: 12px; min-width: 0; margin: 0; padding: 8px 0 0; border: 0; }
+.penalty-controls legend { padding: 0; }
+.penalty-controls label { flex-direction: row; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; }
+.penalty-controls input { width: 18px; height: 18px; margin: 0; accent-color: white; cursor: pointer; }
+.penalty-controls:disabled label, .penalty-controls input:disabled { cursor: default; opacity: .65; }
+footer .timer-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); width: 100%; gap: 20px; align-items: stretch; }
+.timer-group { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; margin: 0; padding: 12px; border: 1px solid #c5cfdd; border-radius: 8px; }
+.timer-group legend { padding: 0 6px; font-weight: 600; }
+.medical-controls { justify-content: flex-end; }
+@media (max-width: 750px) {
+  footer .timer-toolbar { grid-template-columns: minmax(0, 1fr); }
+  .medical-controls { justify-content: flex-start; }
+}
+.penalty-status { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.sync-summary, .audit-history { margin: 12px 0; padding: 12px; border: 1px solid #c5cfdd; border-radius: 8px; }
+.sync-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.sync-summary p { flex-basis: 100%; margin: 0; }
+.audit-history summary { cursor: pointer; font-weight: 600; margin-bottom: 12px; }
+.audit-table { overflow-x: auto; }
+.audit-table table { border-collapse: collapse; width: 100%; text-align: left; }
+.audit-table th, .audit-table td { padding: 8px; border-bottom: 1px solid #c5cfdd; vertical-align: top; }
+.audit-table small { display: block; overflow-wrap: anywhere; }
+.audit-pending { color: #805300; font-weight: 700; }
+.audit-error { color: #ba1428; font-weight: 700; }
+.penalty-alert { display: inline-block; background: #ffea00; color: #111; padding: .25em .7em; border: 2px solid #fff36b; border-radius: 0; font-weight: 900; line-height: 1.2; }
+.medical-overlay { position: fixed; inset: 0; z-index: 1100; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgb(0 0 0 / 75%); box-sizing: border-box; }
+.medical-modal { box-sizing: border-box; width: min(100%, 1000px); max-height: calc(100dvh - 32px); overflow: auto; padding: clamp(16px, 4vmin, 48px); border: clamp(4px, .7vmin, 8px) solid #ffea00; border-radius: 16px; background: #070c19; color: white; text-align: center; box-shadow: 0 0 32px rgb(255 234 0 / 35%); }
+.medical-modal h2 { margin: 0 0 .5em; color: #ffea00; font-size: clamp(24px, 5vmin, 64px); line-height: 1.2; font-weight: 700; }
+.medical-clock { display: block; font-size: clamp(36px, 13vmin, 160px); line-height: 1.15; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+// The external display owns the viewport, independently of the application shell.
+.public-display {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  box-sizing: border-box;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  padding: clamp(8px, 1.5vmin, 24px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 1vmin, 16px);
+  overflow: auto;
+}
+.public-display > h2 { flex: 0 0 auto; font-size: clamp(12px, 2.2vmin, 36px); line-height: 1.2; margin: 0; overflow-wrap: anywhere; }
+.public-display > .clock { flex: 0 0 auto; font-size: clamp(32px, 12vmin, 180px); line-height: 1; font-weight: 700; }
+.public-display .fighters { flex: 1 0 auto; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; gap: clamp(8px, 1.5vmin, 24px); margin: 0; }
+.public-display .fighters section { min-width: 0; padding: clamp(10px, 2vmin, 32px); display: flex; flex-direction: column; }
+.public-display .fighters section[hidden] { display: none; }
+.public-display .competitor-name { font-size: clamp(18px, 3.8vmin, 64px); font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; margin: 0 0 .25em; }
+.public-display .competitor-academy { font-size: clamp(12px, 2.5vmin, 42px); line-height: 1.2; overflow-wrap: anywhere; margin: 0; }
+.public-display .score { flex: 1 0 auto; display: flex; justify-content: center; align-items: center; font-size: min(24vw, 36dvh); font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.public-display .badge { font-size: clamp(16px, 3vmin, 48px); margin: .2em 0; }
+.public-display .penalty-status { font-size: clamp(16px, 4vmin, 64px); margin: .2em 0 0; min-height: 1.8em; }
+.public-display .winner { flex: 0 0 auto; font-size: clamp(16px, 3vmin, 48px); padding: .4em; margin: 0; overflow-wrap: anywhere; }
+.public-display > p, .public-display .hantei { margin: 0; font-size: clamp(12px, 2.5vmin, 40px); }
+@media (max-aspect-ratio: 3/4) {
+  .public-display .fighters { grid-template-columns: minmax(0, 1fr); }
+  .public-display .score { font-size: min(28vw, 20dvh); }
+}

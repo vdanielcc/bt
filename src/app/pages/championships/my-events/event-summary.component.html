@@ -1,0 +1,111 @@
+<vex-page-layout><vex-page-layout-header class="pb-16 flex flex-col items-start justify-center"><div class="container w-full"><h1 class="title mt-0 mb-1">{{ event?.name || ('Resumen del evento' | translate) }}</h1><vex-breadcrumbs [crumbs]="['Campeonatos' | translate, 'Mis Eventos' | translate, 'Resumen' | translate]"></vex-breadcrumbs></div></vex-page-layout-header>
+<vex-page-layout-content class="container -mt-6">
+  <div *ngIf="loading" class="state"><mat-spinner diameter="44"></mat-spinner>{{ 'Cargando resumen...' | translate }}</div>
+  <div *ngIf="!loading && loadError" class="state"><mat-icon svgIcon="mat:error_outline"></mat-icon><h2>{{ 'No pudimos cargar el resumen del evento' | translate }}</h2><button mat-flat-button color="primary" (click)="load()">{{ 'Reintentar' | translate }}</button></div>
+  <ng-container *ngIf="!loading && !loadError && summary">
+    <a mat-stroked-button [routerLink]="['/campeonatos/mis-eventos', eventId, 'tarifas']">Tarifas de inscripción</a>
+    <bte-pricing-summary-card [eventId]="eventId"></bte-pricing-summary-card>
+    <div class="metrics">
+      <button class="metric primary" (click)="show('academies')"><mat-icon svgIcon="mat:school"></mat-icon><strong>{{ summary.totalAcademias ?? summary.TotalAcademias ?? 0 }}</strong><span>{{ 'Dojos inscritos' | translate }}</span><small>{{ 'Más información' | translate }}</small></button>
+      <button class="metric success" (click)="show('categories')"><mat-icon svgIcon="mat:category"></mat-icon><strong>{{ summary.totalCategorias ?? summary.TotalCategorias ?? 0 }}</strong><span>{{ 'Categorías disponibles' | translate }}</span><small>{{ 'Más información' | translate }}</small></button>
+      <button class="metric danger" (click)="show('tickets')"><mat-icon svgIcon="mat:payments"></mat-icon><strong>{{ (summary.totalRecaudado ?? summary.TotalRecaudado ?? 0) | currency:'CLP':'symbol-narrow':'1.0-0' }}</strong><span>{{ 'Total calculado' | translate }}</span><small>{{ 'Más información' | translate }}</small></button>
+    </div>
+    <bte-registration-counts [counts]="summary"></bte-registration-counts>
+    <button mat-stroked-button type="button" (click)="show('competitors')">Ver inscritos</button>
+    <bte-event-payment-review *ngIf="activeSection === 'tickets'" [eventId]="eventId"></bte-event-payment-review>
+    <mat-card class="detail-card" *ngIf="activeSection === 'academies' || activeSection === 'competitors'">
+      <mat-card-header><mat-card-title>{{ (activeSection === 'competitors' ? 'Inscritos: deportistas, coaches y equipos' : 'Dojos inscritos') | translate }}</mat-card-title></mat-card-header>
+      <mat-card-content><mat-form-field appearance="outline"><mat-label>{{ 'Academia' | translate }}</mat-label><mat-select [(value)]="selectedAcademyId"><mat-option [value]="0">{{ 'Todas las academias' | translate }}</mat-option><mat-option *ngFor="let academy of academies" [value]="academyIdOf(academy)">{{ academyName(academy) }}</mat-option></mat-select></mat-form-field>
+        <bte-registration-counts *ngIf="selectedAcademyId" [counts]="filteredAcademies[0]"></bte-registration-counts>
+        <div class="table-wrap"><table><thead><tr><th>#</th><th>{{ 'Inscrito' | translate }}</th><th>{{ 'Categorías' | translate }}</th><th>{{ 'Valor Ticket' | translate }}</th></tr></thead><tbody><tr *ngFor="let item of competitors; index as i"><td>{{ i + 1 }}</td><td>{{ item.estudiante ?? item.Estudiante }}<small class="block">{{ registrationKind(item) }}</small></td><td>{{ item.sportingCategories ?? item.SportingCategories ?? "—" }}<small *ngIf="item.coachRegistrations ?? item.CoachRegistrations" class="block">Registros de coach: {{ item.coachRegistrations ?? item.CoachRegistrations }}</small></td><td>{{ (item.valorTicket ?? item.ValorTicket ?? 0) | currency:'CLP':'symbol-narrow':'1.0-0' }}</td></tr><tr *ngIf="!competitors.length"><td colspan="4">{{ 'No se encontraron resultados' | translate }}</td></tr></tbody><tfoot><tr><td colspan="3">{{ 'Total calculado' | translate }}</td><td>{{ totalTicketsFiltered | currency:'CLP':'symbol-narrow':'1.0-0' }}</td></tr></tfoot></table></div>
+      </mat-card-content>
+    </mat-card>
+    <mat-card class="detail-card category-maintainer" *ngIf="activeSection === 'categories'">
+      <mat-card-header><mat-card-title>{{ 'Categorías disponibles' | translate }}</mat-card-title></mat-card-header>
+      <mat-card-content>
+        <div class="category-download-toolbar">
+        <mat-form-field appearance="outline" class="category-select">
+          <mat-label>{{ 'Categoría' | translate }}</mat-label>
+          <input matInput [matAutocomplete]="categoryAutocomplete" [value]="categoryInputValue" autocomplete="off"
+            (input)="categorySearch = $any($event.target).value" placeholder="Buscar por código o nombre"
+            [disabled]="refreshingFixture || savingFixture || generatingFixture || changingFixtureType">
+          <mat-icon matSuffix svgIcon="mat:search"></mat-icon>
+          <mat-autocomplete #categoryAutocomplete="matAutocomplete" [displayWith]="displayCategory" autoActiveFirstOption
+            (opened)="restoreSelectedCategoryOption(categoryAutocomplete)" (optionSelected)="selectCategory($event.option.value)" (closed)="categorySearch = null">
+            <mat-option *ngFor="let category of filteredCategories" [value]="category" [class.fixture-version-created]="categoryHasFixtureVersion(category)" [class.fixture-version-outdated]="outdatedFixtures.has(categoryIdOf(category))" [attr.title]="outdatedFixtures.has(categoryIdOf(category)) ? 'Los inscritos cambiaron. Actualiza las llaves.' : null">{{ displayCategory(category) }}</mat-option>
+            <mat-option *ngIf="!filteredCategories.length" disabled>No se encontraron categorías.</mat-option>
+          </mat-autocomplete>
+        </mat-form-field>
+        <button mat-flat-button color="primary" (click)="downloadAllFixtures()" [disabled]="downloadingFixtures || loadingCategory || generatingFixture || savingFixture || refreshingFixture || !categories.length">
+          <mat-icon svgIcon="mat:picture_as_pdf"></mat-icon>{{ downloadingFixtures ? downloadProgress : 'Descargar llaves' }}
+        </button>
+        <button mat-stroked-button color="primary" (click)="exportNPro()" [disabled]="exportingNPro || loadingCategory || generatingFixture || savingFixture || refreshingFixture || !selectedCategory"><mat-icon svgIcon="mat:file_download"></mat-icon>N-Pro</button>
+        <button mat-stroked-button color="primary" (click)="exportNPro(true)" [disabled]="exportingNPro || loadingCategory || generatingFixture || savingFixture || refreshingFixture || !categories.length"><mat-icon svgIcon="mat:file_download"></mat-icon>N-Pro — Todas</button>
+        </div>
+        <p *ngIf="!categories.length" class="empty-message">{{ 'No hay categorías disponibles' | translate }}</p>
+        <div *ngIf="loadingCategory" class="category-state"><mat-spinner diameter="36"></mat-spinner>{{ 'Cargando categoría...' | translate }}</div>
+        <div *ngIf="categoryError && !loadingCategory" class="category-state error-state"><mat-icon svgIcon="mat:error_outline"></mat-icon><span>{{ 'No fue posible cargar todos los datos de la categoría' | translate }}</span><button mat-stroked-button color="primary" (click)="loadCategory()">{{ 'Reintentar' | translate }}</button></div>
+        <ng-container *ngIf="selectedCategory && !loadingCategory">
+          <section class="category-details">
+            <div><span>{{ 'Nombre' | translate }}</span><strong>{{ selectedCategory.name ?? selectedCategory.Name ?? '-' }}</strong></div>
+            <div><span>{{ 'Código' | translate }}</span><strong>{{ selectedCategory.code ?? selectedCategory.Code ?? '-' }}</strong></div>
+            <div><span>{{ 'Modalidad' | translate }}</span><strong>{{ modalityName }}</strong></div>
+            <div><span>{{ 'Clasificación' | translate }}</span><strong>{{ categoryRule }}</strong></div>
+            <div><span>{{ 'Competidores' | translate }}</span><strong>{{ categoryCompetitors.length }}</strong></div>
+            <div><span>{{ 'Versión de las llaves' | translate }}</span><strong>{{ fixtureVersion }}</strong></div>
+          </section>
+          <mat-form-field appearance="outline">
+            <mat-label>Formato de las llaves</mat-label>
+            <mat-select #fixtureTypeSelect [value]="categoryFixtureType" (selectionChange)="changeFixtureType($event.value, fixtureTypeSelect)" [disabled]="!canManageCompetitors || changingFixtureType || loadingCategory || generatingFixture || refreshingFixture || savingFixture">
+              <mat-option value="ELIMINACION">Eliminación directa</mat-option><mat-option value="ELIMINACIONKUDO">Eliminación directa (Kudo)</mat-option><mat-option value="KUDOREPECHAGE">Eliminación directa (Kudo-repechage)</mat-option>
+              <mat-option value="ROUNDROBIN">Round robin (todos contra todos)</mat-option>
+              <mat-option value="MEJORDETRES">Mejor de tres</mat-option>
+              <mat-option value="KATAJKA">Kata JKA</mat-option>
+              <mat-option value="SOLOPUNTAJE">Solo Puntaje</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <p *ngIf="fixtureTypeChanged" class="format-notice">Esta versión corresponde al formato anterior. Pulsa Refrescar para generar las llaves con el formato seleccionado.</p>
+          <p *ngIf="categoryFixtureType === 'KATAJKA'" class="format-notice">Hasta 5 participantes pasan directamente a puntajes. Con 6 o más se disputan rondas AKA/SHIRO hasta quedar 5 o menos; los libres avanzan. Las casillas J1–J5 quedan disponibles para anotación manual.</p>
+          <p *ngIf="categoryFixtureType === 'SOLOPUNTAJE'" class="format-notice">Lista individual de todos los participantes, sin cruces eliminatorios. Casillas J1–J5 para anotación manual, también en el PDF.</p>
+          <p *ngIf="categoryFixtureType === 'MEJORDETRES'">Requiere dos competidores. Gana quien consiga dos victorias; el tercer encuentro solo se disputa si empatan 1–1.</p>
+          <div class="fixture-toolbar">
+            <div><h3>{{ 'Llaves de la categoría' | translate }}</h3><p>{{ 'La primera versión se genera automáticamente al cargar la categoría.' | translate }}</p></div>
+            <div class="fixture-actions"><button *ngIf="canManageCompetitors" mat-icon-button color="primary" (click)="addCategoryCompetitors()" [disabled]="changingFixtureType || !selectedCategory || loadingCategory || generatingFixture || savingFixture || refreshingFixture" type="button" matTooltip="Agregar deportista" aria-label="Agregar deportista"><mat-icon svgIcon="mat:person_add"></mat-icon></button><button mat-icon-button color="primary" (click)="refreshFixture()" [disabled]="changingFixtureType || !selectedCategory || loadingCategory || generatingFixture || savingFixture || refreshingFixture" type="button" matTooltip="Refrescar" aria-label="Refrescar"><mat-icon svgIcon="mat:refresh"></mat-icon></button><span *ngIf="generatingFixture" class="generating"><mat-spinner diameter="20"></mat-spinner>{{ 'Generando llaves...' | translate }}</span><span *ngIf="savingFixture" class="generating"><mat-spinner diameter="20"></mat-spinner>{{ 'Guardando versión...' | translate }}</span><button mat-icon-button (click)="undoFixtureChange()" [disabled]="!canUndoFixtureChange || savingFixture || refreshingFixture" type="button" matTooltip="Deshacer" aria-label="Deshacer"><mat-icon svgIcon="mat:undo"></mat-icon></button><button mat-icon-button color="primary" (click)="addFixtureMatch()" [disabled]="!isElimination || fixtureTypeChanged || !fixture || !fixtureRounds.length || savingFixture || refreshingFixture" type="button" matTooltip="Agregar llave" aria-label="Agregar llave"><mat-icon svgIcon="mat:add"></mat-icon></button><button mat-icon-button color="primary" (click)="exportPdf()" [disabled]="!fixture || savingFixture || refreshingFixture" type="button" matTooltip="Exportar PDF" aria-label="Exportar PDF"><mat-icon svgIcon="mat:picture_as_pdf"></mat-icon></button><button mat-mini-fab color="primary" (click)="saveFixtureVersion()" [disabled]="isKudoRepechage || changingFixtureType || fixtureTypeChanged || !fixture || !fixtureRounds.length || savingFixture || refreshingFixture" type="button" matTooltip="Guardar nueva versión" aria-label="Guardar nueva versión"><mat-icon svgIcon="mat:save"></mat-icon></button></div>
+          </div>
+          <p *ngIf="fixture?.generatedLocally && fixtureRounds.length" class="format-notice">Hay cambios pendientes en las llaves. Guarda una nueva versión para conservarlos.</p>
+          <p *ngIf="fixture && !fixtureRounds.length && !isElimination && !isScoreOnly" class="format-notice">Este formato requiere al menos dos competidores para guardar encuentros.</p>
+          <mat-menu #competitorMenu="matMenu">
+            <ng-template matMenuContent let-slot="slot">
+              <button mat-menu-item (click)="viewCompetitorProfile(slot)"><mat-icon svgIcon="mat:person_outline"></mat-icon><span>Ver ficha del deportista</span></button>
+              <button mat-menu-item (click)="editCompetitorCategory(slot, 'remove')"><mat-icon svgIcon="mat:delete_outline"></mat-icon><span>Eliminar de esta categoría</span></button>
+              <button mat-menu-item (click)="editCompetitorCategory(slot, 'move')"><mat-icon svgIcon="mat:swap_horiz"></mat-icon><span>Mover</span></button>
+            </ng-template>
+          </mat-menu>
+          <ng-template #competitorActions let-slot>
+            <button *ngIf="canManageCompetitors && slot.competitorId && (fixture?.version || fixture?.Version)" mat-icon-button type="button" class="competitor-menu-button" [matMenuTriggerFor]="competitorMenu" [matMenuTriggerData]="{ slot: slot }" [disabled]="loadingCategory || savingFixture || refreshingFixture" (click)="$event.stopPropagation()" [attr.aria-label]="'Opciones de ' + slot.name"><mat-icon svgIcon="mat:more_vert"></mat-icon></button>
+          </ng-template>
+          <section class="fixture-result" *ngIf="fixtureRounds.length">
+            <header class="fixture-header"><h2>{{ championshipName }}</h2><strong>{{ selectedCategory.code ?? selectedCategory.Code }} · {{ selectedCategory.name ?? selectedCategory.Name }}</strong><small>{{ fixtureColorCaption }} · Versión {{ fixtureVersion }}</small></header>
+            <bte-kudo-repechage-fixture *ngIf="isKudoRepechage" [rounds]="fixtureRounds"></bte-kudo-repechage-fixture>
+            <bte-score-only-fixture *ngIf="isScoreOnly" [rounds]="fixtureRounds" [actionsTemplate]="competitorActions"></bte-score-only-fixture>
+            <bte-kata-jka-fixture *ngIf="isKataJka" [rounds]="fixtureRounds" [actionsTemplate]="competitorActions" [editable]="canManageCompetitors && !fixtureTypeChanged && !loadingCategory && !generatingFixture && !savingFixture && !refreshingFixture" (slotDropped)="dropFixtureSlot($event)"></bte-kata-jka-fixture>
+            <div class="bracket-scroll" *ngIf="!isKataJka && !isScoreOnly && !isKudoRepechage">
+              <div class="bracket" [class.independent-matches]="!isElimination" [style.--round-count]="fixtureRounds.length + (isElimination ? 1 : 0)" cdkDropListGroup>
+                <section class="bracket-round" *ngFor="let round of fixtureRounds; index as roundIndex"><h4>{{ round.name }}</h4><p *ngIf="roundRestingNames(round)" class="round-rest">Descansa: {{ roundRestingNames(round) }}</p><div class="round-matches" [style.--match-count]="round.matches.length"><article class="bracket-match" *ngFor="let match of round.matches; index as matchIndex">
+                  <div class="match-card">
+                    <div class="fixture-slot top" cdkDropList [cdkDropListData]="slotLocation(roundIndex, matchIndex, 'top')" (cdkDropListDropped)="dropFixtureSlot($event)" [style.--corner-color]="match.top.color" [class.light-corner]="match.top.color === '#f8fafc'" [class.empty-slot]="match.top.past"><div class="slot-drag" cdkDrag [cdkDragDisabled]="!isElimination || fixtureTypeChanged || !match.top.competitorId || refreshingFixture"><b>{{ match.top.label }}</b><span><strong>{{ match.top.name }}</strong><small>{{ match.top.academy }}</small></span></div><ng-container *ngTemplateOutlet="competitorActions; context: { $implicit: match.top }"></ng-container></div>
+                    <div class="fixture-slot bottom" cdkDropList [cdkDropListData]="slotLocation(roundIndex, matchIndex, 'bottom')" (cdkDropListDropped)="dropFixtureSlot($event)" [style.--corner-color]="match.bottom.color" [class.light-corner]="match.bottom.color === '#f8fafc'" [class.empty-slot]="match.bottom.past"><div class="slot-drag" cdkDrag [cdkDragDisabled]="!isElimination || fixtureTypeChanged || !match.bottom.competitorId || refreshingFixture"><b>{{ match.bottom.label }}</b><span><strong>{{ match.bottom.name }}</strong><small>{{ match.bottom.academy }}</small></span></div><ng-container *ngTemplateOutlet="competitorActions; context: { $implicit: match.bottom }"></ng-container></div>
+                  </div>
+                </article></div></section>
+                <section *ngIf="isElimination" class="bracket-round winner-round">
+                  <h4>Ganador</h4>
+                  <div class="winner-position"><div class="winner-card" aria-label="Ganador de la final"><strong>{{ fixtureWinner?.name }}</strong><small>{{ fixtureWinner?.academy }}</small><ng-container *ngIf="fixtureWinner as winner"><ng-container *ngTemplateOutlet="competitorActions; context: { $implicit: winner }"></ng-container></ng-container></div></div>
+                </section>
+              </div>
+            </div>
+          </section>
+        </ng-container>
+      </mat-card-content>
+    </mat-card>
+  </ng-container>
+</vex-page-layout-content></vex-page-layout>

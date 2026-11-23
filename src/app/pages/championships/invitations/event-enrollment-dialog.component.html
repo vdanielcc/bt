@@ -1,0 +1,23 @@
+<h2 mat-dialog-title>{{ 'Categorías disponibles' | translate }}</h2>
+<mat-dialog-content>
+  <div *ngIf="registrationClosed">
+    <p>El plazo de inscripciones terminó. Las excepciones del organizador o administrador quedan registradas.</p>
+    <p *ngIf="data.event.canOverrideRegistrationClose">Puedes gestionar alumnos hasta el día anterior al inicio del evento.</p>
+  </div>
+  <div class="student-summary"><mat-icon svgIcon="mat:person"></mat-icon><div><strong>{{ data.student.fullName || ((data.student.firstName || data.student.nombres || '') + ' ' + (data.student.lastName || data.student.apellidos || '')) }}</strong><small>{{ (data.student.gender || data.student.genero || '') }}<span *ngIf="data.student.age || data.student.edad"> · {{ 'Edad' | translate }}: {{ data.student.age || data.student.edad }}</span></small></div></div>
+  <div *ngIf="loading" class="dialog-state"><mat-spinner diameter="38"></mat-spinner>{{ 'Cargando categorías...' | translate }}</div>
+  <div *ngIf="loadError" class="dialog-state"><mat-icon svgIcon="mat:error_outline"></mat-icon>{{ 'No pudimos cargar las categorías' | translate }}<button mat-stroked-button color="primary" (click)="load()">{{ 'Reintentar' | translate }}</button></div>
+  <mat-tab-group *ngIf="!loading && !loadError && groups.length">
+    <mat-tab *ngFor="let group of groups" [label]="group.name"><div class="category-list">
+      <div class="category" *ngFor="let category of group.categories"><mat-checkbox [disabled]="selectionDisabled(category)" [checked]="selected(category)" (change)="toggle(category, $event.checked)">{{ name(category) }}</mat-checkbox>
+        <div class="children" *ngIf="selected(category) && children(category).length"><mat-checkbox *ngFor="let child of children(category)" [disabled]="selectionDisabled(child)" [checked]="selected(child)" (change)="toggle(child, $event.checked)">{{ name(child) }}</mat-checkbox></div>
+      </div>
+    </div></mat-tab>
+  </mat-tab-group>
+  <p *ngIf="!loading && !loadError" class="mt-4 text-secondary" aria-live="polite">
+    Categorías seleccionadas: {{ selectedIds.size }}<span *ngIf="(data.event.maxCategoriesPerRegistration || 0) > 0"> · Máximo por deportista: {{ data.event.maxCategoriesPerRegistration }}</span>
+  </p>
+  <div *ngIf="!loading && !loadError && !groups.length" class="dialog-state">{{ 'No hay categorías disponibles' | translate }}</div>
+<bte-enrollment-price-preview *ngIf="!loading && !loadError" [eventId]="data.event.id" [categoryIds]="pricingCategoryIds" [competitorId]="data.student.competitorId" [studentId]="isTeam ? undefined : (data.student.id ?? data.student.Id)" [registrationType]="isTeam ? 'EQUIPO' : undefined" (ready)="priceReady = $event"></bte-enrollment-price-preview>
+</mat-dialog-content>
+<mat-dialog-actions align="end"><button mat-button mat-dialog-close>{{ 'Cerrar' | translate }}</button><button mat-flat-button color="primary" [disabled]="saving || loading || loadError || !priceReady" (click)="save()">{{ (saving ? 'Guardando...' : 'Guardar') | translate }}</button></mat-dialog-actions>

@@ -1,0 +1,142 @@
+<main [class.public-display]="display">
+  <header *ngIf="!display">
+    <a mat-stroked-button routerLink="/scoreboard/control-tables" (click)="logInterface('LEAVE_CONTROL')">Mesas de control</a>
+    <h1>Scoreboard WKF · Tatami {{areaId}}</h1>
+    <label class="category-picker">Categoría
+      <select [ngModel]="categoryId" (ngModelChange)="changeCategory(+$event)" [class.category-completed]="categoryCompleted" [disabled]="busy || retry || loadingCategories || !!storageError">
+        <option *ngIf="!categories.length" [ngValue]="categoryId">{{match?.categoryName || 'Categoría actual'}}</option>
+        <option *ngFor="let category of categories" [ngValue]="category.id" [class.category-completed]="category.completed" [disabled]="!category.hasFixture">{{category.label}}{{category.completed ? ' · Finalizada' : (!category.hasFixture ? ' · Sin llave guardada' : '')}}</option>
+      </select>
+    </label>
+    <button *ngIf="categoryCompleted && nextCategory as next" mat-stroked-button [disabled]="busy || retry || loadingCategories || !!storageError" (click)="changeCategory(next.id)">Siguiente categoría</button>
+    <label>Combate <select [(ngModel)]="selected" (ngModelChange)="select()" [disabled]="busy || retry">
+      <option *ngFor="let m of matches" [value]="m.matchId">{{m.roundName}} · {{m.matchNumber}} · {{m.aka?.name}} / {{m.shiro?.name}}</option>
+    </select></label>
+    <button mat-stroked-button (click)="openDisplay()" [disabled]="!snapshot">Abrir pantalla</button>
+  </header>
+  <p class="error" *ngIf="error" role="alert">{{error}}</p>
+  <p class="error" *ngIf="storageError && !display" role="alert">{{storageError}}</p>
+  <div *ngIf="categoryError && !display" class="error" role="alert">{{categoryError}} <button mat-stroked-button [disabled]="loadingCategories" (click)="retryCategories()">Reintentar categorías</button></div>
+  <aside *ngIf="!display" class="sync-summary" aria-live="polite">
+    <strong>{{apiOnline ? 'API disponible' : 'API sin conexión confirmada'}}</strong>
+    <span>{{pendingCount}} acción(es) pendiente(s) en este navegador</span>
+    <p *ngIf="pendingCount">La acción está guardada en IndexedDB. Se reintentará al recuperar conexión. Los controles del encuentro quedan bloqueados hasta resolverla para conservar el orden.</p>
+    <button *ngIf="retry" mat-stroked-button (click)="retryPending()" [disabled]="!!storageError">Reintentar operación pendiente</button>
+  </aside>
+  <ng-container *ngIf="state as s">
+    <h2>{{match?.categoryName}} · {{s.modality}} WKF · Tatami {{areaId}}</h2>
+    <div class="clock" [class.critical]="s.modality === 'KUMITE' && clockMs() > 0 && clockMs() < 15000" *ngIf="s.modality === 'KUMITE'">{{time(clockMs())}}</div>
+    <div class="fighters" [class.single]="display && s.modality === 'KATA' && !!s.displaySide">
+      <section *ngFor="let side of sides" [hidden]="display && s.modality === 'KATA' && !!s.displaySide && s.displaySide !== side" [class.aka]="side === 'AKA'" [class.ao]="side === 'AO'" [class.active]="s.displaySide === side" [class.kumite-panel]="s.modality === 'KUMITE'">
+        <h2 class="competitor-name">{{side}} · {{name(side)}}</h2><p class="competitor-academy">{{competitor(side)?.academy}}</p>
+        <ng-container *ngIf="s.modality === 'KUMITE'">
+          <strong class="score" [class.confirmed-winner]="display && s.status === 'CONFIRMED' && s.winner === side">{{fighter(side).total}}</strong>
+          <p *ngIf="fighter(side).senshu" class="badge">SENSHU</p>
+          <p *ngIf="!display && fighter(side).kiken" class="competitor-mark">KIKEN</p>
+          <p *ngIf="display" class="penalty-status">
+            <ng-container *ngFor="let label of penaltyLabels; index as i">
+              <span *ngIf="fighter(side).penalty >= i + 1" class="penalty-alert" [attr.aria-label]="penalties[i + 1]">{{label}}</span>
+            </ng-container>
+            <b *ngIf="fighter(side).kiken" class="penalty-alert">KIKEN</b>
+          </p>
+          <div *ngIf="!display" class="controls">
+            <div *ngFor="let award of awards" class="award-control" role="group" [attr.aria-label]="award.label + ' ' + side">
+              <button mat-stroked-button [disabled]="locked || retry" [attr.aria-label]="'Descontar ' + award.label + ' a ' + side" (click)="act('REMOVE_' + award.action, side)">−</button>
+              <span>{{award.label}}</span>
+              <button mat-flat-button [disabled]="locked || retry" [attr.aria-label]="'Sumar ' + award.label + ' a ' + side" (click)="act('ADD_' + award.action, side)">+</button>
+            </div>
+            <button mat-stroked-button class="mark-toggle" [class.mark-selected]="fighter(side).senshu" [attr.aria-pressed]="fighter(side).senshu" [disabled]="locked || retry" (click)="act('SENSHU', side)">Senshu</button>
+            <button mat-stroked-button class="mark-toggle" [class.mark-selected]="fighter(side).kiken" [attr.aria-pressed]="fighter(side).kiken" [disabled]="locked || retry" (click)="act('KIKEN', side)">Kiken</button>
+          </div>
+            <fieldset *ngIf="!display" class="penalty-controls" [disabled]="locked || retry">
+              <legend>Sanción {{side}}</legend>
+              <label *ngFor="let label of penaltyLabels; index as i" [title]="penalties[i + 1]">
+                <input type="checkbox" [ngModel]="fighter(side).penalty >= i + 1" (ngModelChange)="act('PENALTY', side, $event ? i + 1 : i)">
+                {{label}}
+              </label>
+            </fieldset>
+        </ng-container>
+        <ng-container *ngIf="s.modality === 'KATA'">
+          <h3>{{fighter(side).kata || 'Kata por seleccionar'}}</h3>
+          <strong class="score" [class.confirmed-winner]="display && s.status === 'CONFIRMED' && s.winner === side">{{fighter(side).kataTotal | number:'1.1-1'}}</strong>
+          <div class="clock" *ngIf="s.bunkai">{{time(clockMs(side))}}</div>
+          <p>Notas: <span *ngFor="let score of fighter(side).judges">{{score ?? '—'}} · </span></p>
+          <div *ngIf="!display" class="controls">
+            <label>Kata <input list="wkf-katas" [(ngModel)]="drafts[side].kata" [disabled]="locked || retry"></label>
+            <button mat-stroked-button [disabled]="locked || retry" (click)="act('KATA_SELECT', side)">Seleccionar kata</button>
+            <div class="judges">
+              <label *ngFor="let score of drafts[side].judges; index as i; trackBy: trackJudge">Juez {{i + 1}}
+                <input type="number" min="5" max="10" step="0.1" [(ngModel)]="drafts[side].judges[i]" [disabled]="locked || retry">
+              </label>
+            </div>
+            <button mat-flat-button [disabled]="locked || retry" (click)="act('KATA_SCORES', side)">Guardar cinco notas</button>
+            <label>Tiempo (segundos) <input type="number" min="180" max="300" [(ngModel)]="drafts[side].seconds" [disabled]="locked || retry"></label>
+            <button mat-stroked-button [disabled]="locked || retry" (click)="act('SET_TIME', side, drafts[side].seconds)">Configurar 3–5 minutos</button>
+            <button mat-flat-button [disabled]="locked || retry" (click)="act('START', side)">Iniciar {{side}}</button>
+            <button mat-stroked-button [disabled]="locked || retry" (click)="act('DISPLAY_SIDE', side)">Mostrar {{side}}</button>
+          </div>
+        </ng-container>
+      </section>
+    </div>
+    <p class="winner" *ngIf="s.winner">{{s.status === 'CONFIRMED' ? 'Ganador confirmado' : 'Ganador propuesto'}}: {{s.winner}} · {{s.winner === 'AKA' ? name('AKA') : name('AO')}} · {{s.decision}}</p>
+    <p *ngIf="s.decision === 'TIE_PENDING_RULES'">Empate de KATA pendiente de resolución. El resultado no puede confirmarse.</p>
+    <div *ngIf="s.modality === 'KATA'" class="hantei">Comparación por juez:
+      <span *ngFor="let score of s.aka.judges; index as i">J{{i + 1}}: {{judgeWinner(i)}} · </span>
+    </div>
+    <p *ngIf="!display && s.modality === 'KUMITE' && (s.medicalStartedAt || s.medicalMs < 180000)">Tiempo médico: {{time(medical)}}</p>
+    <div *ngIf="display && s.modality === 'KUMITE' && s.medicalStartedAt" class="medical-overlay">
+      <div class="medical-modal" role="dialog" aria-modal="true" aria-labelledby="medical-modal-title">
+        <h2 id="medical-modal-title">tiempo medico</h2>
+        <strong class="medical-clock" aria-label="Tiempo médico restante">{{time(medical)}}</strong>
+      </div>
+    </div>
+    <footer *ngIf="!display">
+      <div *ngIf="s.modality === 'KUMITE'" class="timer-toolbar">
+        <fieldset class="timer-group">
+          <legend>Tiempo de combate</legend>
+          <button mat-flat-button [disabled]="locked || retry" (click)="act('START')">Hajime</button>
+          <button mat-stroked-button [disabled]="locked || retry" (click)="act('PAUSE')">Yame / Pausar</button>
+          <label>Tiempo (segundos) <input type="number" min="0" max="3599" [(ngModel)]="seconds" [disabled]="locked || retry"></label>
+          <button mat-stroked-button [disabled]="locked || retry" (click)="act('SET_TIME', undefined, seconds)">Configurar tiempo</button>
+        </fieldset>
+        <fieldset class="timer-group medical-controls">
+          <legend>Tiempo médico</legend>
+          <button mat-stroked-button [disabled]="locked || retry" (click)="act('MEDICAL_START')">Iniciar médico</button>
+          <button mat-stroked-button [disabled]="locked || retry" (click)="act('MEDICAL_STOP')">Pausar médico</button>
+          <button mat-stroked-button [disabled]="locked || retry" (click)="act('MEDICAL_RESET')">Reiniciar médico</button>
+        </fieldset>
+      </div>
+      <button *ngIf="s.modality === 'KATA'" mat-stroked-button [disabled]="locked || retry" (click)="act('BUNKAI')">{{s.bunkai ? 'Modo KATA' : 'Modo Bunkai'}}</button>
+      <button *ngIf="s.modality === 'KATA'" mat-stroked-button [disabled]="locked || retry" (click)="act('PAUSE')">Yame / Pausar</button>
+      <button mat-stroked-button [disabled]="locked || retry" (click)="act('UNDO')">Deshacer</button>
+      <button mat-stroked-button [disabled]="locked || retry" (click)="reset()">Reiniciar combate</button>
+      <button mat-stroked-button [disabled]="locked || retry" (click)="act('ADJUST_RESULT')">Ajustar resultado</button>
+      <button mat-flat-button [disabled]="locked || retry" (click)="act('FINISH')">Finalizar y evaluar</button>
+      <div *ngIf="s.decision === 'HANTEI_REQUIRED'">
+        <label>Banderas AKA (de cinco) <input type="number" min="0" max="5" [(ngModel)]="flags" [disabled]="locked || retry"></label>
+        <button mat-flat-button [disabled]="locked || retry" (click)="act('HANTEI', undefined, flags)">Aplicar Hantei</button>
+      </div>
+      <button mat-flat-button color="primary" [disabled]="locked || retry || !s.winner || s.status !== 'FINISHED'" (click)="act('CONFIRM')">Confirmar ganador y avanzar llave</button>
+      <p>Revise el ganador propuesto antes de confirmar. Las acciones se guardan en la API.</p>
+    </footer>
+  </ng-container>
+  <details *ngIf="!display" class="audit-history">
+    <summary>Historial de auditoría del encuentro ({{matchAudit.length}})</summary>
+    <button mat-stroked-button (click)="exportAudit()">Exportar historial JSON</button>
+    <button mat-stroked-button (click)="exportApiAudit()">Exportar historial de API</button>
+    <p>Las acciones de combate se confirman individualmente por la API. Las acciones de interfaz se registran solo en el navegador. El archivo exportado incluye los datos enviados y los estados anterior y posterior disponibles.</p>
+    <div class="audit-table">
+      <table>
+        <thead><tr><th>Fecha local</th><th>Operador</th><th>Acción</th><th>Lado / valor</th><th>Estado</th><th>Intentos</th><th>Revisión API</th><th>Detalle</th></tr></thead>
+        <tbody><tr *ngFor="let entry of matchAudit">
+          <td>{{entry.occurredAt | date:'dd/MM/yyyy HH:mm:ss.SSS'}}</td><td>{{entry.actorName || entry.actorId || '—'}}</td><td>{{entry.operation.action}}</td>
+          <td>{{entry.operation.side || '—'}} / {{entry.operation.value ?? '—'}}</td>
+          <td [class.audit-pending]="entry.status === 'PENDING'" [class.audit-error]="entry.status === 'CONFLICT' || entry.status === 'REJECTED'">{{auditStatus(entry)}}</td>
+          <td>{{entry.attempts}}</td><td>{{entry.serverRevision ?? '—'}}</td>
+          <td>{{entry.error}} <small>{{entry.operationId}}</small></td>
+        </tr></tbody>
+      </table>
+    </div>
+  </details>
+  <datalist id="wkf-katas"><option *ngFor="let kata of katas" [value]="kata"></option></datalist>
+</main>

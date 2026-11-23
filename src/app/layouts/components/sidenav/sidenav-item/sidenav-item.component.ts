@@ -79,12 +79,6 @@ export class SidenavItemComponent implements OnInit, OnChanges {
       )
       .subscribe(() => this.onRouteChange());
 
-    this.navigationService.openChange$
-      .pipe(
-        filter(() => this.isDropdown(this.item)),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe((item) => this.onOpenChange(item));
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -97,9 +91,10 @@ export class SidenavItemComponent implements OnInit, OnChanges {
     }
   }
 
-  toggleOpen() {
+  toggleOpen(event?: MouseEvent) {
+    event?.preventDefault();
+    event?.stopPropagation();
     this.isOpen = !this.isOpen;
-    this.navigationService.triggerOpenChange(this.item as NavigationDropdown);
     this.cd.markForCheck();
   }
 
@@ -122,12 +117,10 @@ export class SidenavItemComponent implements OnInit, OnChanges {
     if (this.hasActiveChilds(this.item as NavigationDropdown)) {
       this.isActive = true;
       this.isOpen = true;
-      this.navigationService.triggerOpenChange(this.item as NavigationDropdown);
       this.cd.markForCheck();
     } else {
       this.isActive = false;
       this.isOpen = false;
-      this.navigationService.triggerOpenChange(this.item as NavigationDropdown);
       this.cd.markForCheck();
     }
   }

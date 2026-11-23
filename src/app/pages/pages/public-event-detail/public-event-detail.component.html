@@ -1,0 +1,35 @@
+<main class="public-detail bg-pattern">
+  <header class="detail-header">
+    <a mat-button routerLink="/login"><mat-icon svgIcon="mat:arrow_back"></mat-icon>Volver al inicio</a>
+    <img src="assets/img/logo/budo-tournaments.png" alt="Budo Tournaments" />
+  </header>
+
+  <div *ngIf="loading" class="state"><mat-spinner diameter="44"></mat-spinner><span>Cargando evento...</span></div>
+  <div *ngIf="!loading && loadError" class="state"><mat-icon svgIcon="mat:error_outline"></mat-icon><h2>No pudimos cargar el evento</h2><a mat-flat-button color="primary" routerLink="/login">Volver</a></div>
+
+  <section *ngIf="!loading && event" class="detail-container">
+    <div class="title-block"><span *ngIf="event.eventType">{{ event.eventType }}</span><h1>{{ event.name }}</h1></div>
+    <mat-card class="detail-card">
+      <div class="info-grid">
+        <div class="poster"><img *ngIf="event.poster" [src]="event.poster" [alt]="event.name"><mat-icon *ngIf="!event.poster" svgIcon="mat:emoji_events"></mat-icon></div>
+        <section class="panel">
+          <h2><mat-icon svgIcon="mat:schedule"></mat-icon>Fechas y horarios</h2>
+          <dl><dt>Fecha del evento</dt><dd>{{ event.eventDateStart | date:'dd/MM/yyyy' }}</dd><dt>Hora de inicio</dt><dd>{{ event.eventDateStart | date:'HH:mm' }}</dd><dt>Término aproximado</dt><dd>{{ event.eventDateEnd | date:'dd/MM/yyyy HH:mm' }}</dd><dt>Inscripciones hasta</dt><dd>{{ event.eventDateCheckin | date:'dd/MM/yyyy HH:mm' }}</dd></dl>
+        </section>
+        <section class="panel">
+          <h2><mat-icon svgIcon="mat:groups"></mat-icon>Organizador</h2>
+          <dl><dt>Evento</dt><dd>{{ event.name }}</dd><dt>Academia</dt><dd>{{ event.academyName || '-' }}</dd></dl>
+          <div class="actions"><a *ngIf="event.eventLinkWhatsapp" mat-flat-button class="whatsapp" [href]="event.eventLinkWhatsapp" target="_blank" rel="noopener">WhatsApp</a></div>
+        </section>
+        <section class="panel location">
+          <h2><mat-icon svgIcon="mat:location_on"></mat-icon>Ubicación</h2><p>{{ event.eventLocation }}</p><p>{{ event.eventAddress }}</p>
+          <p *ngIf="event.feeTicket != null"><strong>Valor entrada:</strong> {{ event.feeTicket | currency:'CLP':'symbol-narrow':'1.0-0' }}</p>
+          <div class="actions"><a *ngIf="event.eventLinkWaze" mat-stroked-button [href]="event.eventLinkWaze" target="_blank" rel="noopener">Waze</a><a *ngIf="event.eventLinkGmaps" mat-stroked-button [href]="event.eventLinkGmaps" target="_blank" rel="noopener">Google Maps</a></div>
+        </section>
+        <iframe *ngIf="mapUrl" class="map" [src]="mapUrl" title="Mapa"></iframe>
+        <section *ngIf="event.descriptions" class="panel description"><h2>Descripción</h2><div [innerHTML]="description"></div></section>
+        <section class="panel prices"><h2>Bases y valores</h2><div *ngFor="let factor of event.factorList">{{ factor.totalCategories }} Categoría {{ factor.description }} — {{ factor.ticketValue | currency:'CLP':'symbol-narrow':'1.0-0' }}</div><a *ngIf="event.rulesDocument" mat-flat-button color="primary" [href]="event.rulesDocument" target="_blank" rel="noopener">Ver bases</a></section>
+      </div>
+    </mat-card>
+  </section>
+</main>

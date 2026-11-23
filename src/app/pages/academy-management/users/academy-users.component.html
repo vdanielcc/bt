@@ -1,0 +1,39 @@
+<header class="heading">
+  <div><p>{{ isSystemAdmin ? 'Administración' : 'Academia' }} / Usuarios</p><h1>{{ isSystemAdmin ? 'Administración de usuarios' : 'Usuarios de la academia' }}</h1>
+    <p class="subtitle">{{ isSystemAdmin ? 'Selecciona una academia para administrar sus cuentas y perfiles.' : 'Administra las cuentas de instructores, apoderados y alumnos.' }}</p></div>
+  <button mat-flat-button color="primary" (click)="open()" [disabled]="!academyId || loading || loadingAcademies || !!academiesError"><mat-icon svgIcon="mat:person_add"></mat-icon> Crear usuario</button>
+</header>
+<section *ngIf="isSystemAdmin" class="card mb-6">
+  <p *ngIf="loadingAcademies" role="status">Cargando academias…</p>
+  <p *ngIf="academiesError" class="error" role="alert">{{ academiesError }} <button mat-button (click)="loadAcademies()">Reintentar</button></p>
+  <ng-container *ngIf="!loadingAcademies && !academiesError">
+    <mat-form-field appearance="outline"><mat-label>Buscar academia por nombre o ID</mat-label><input matInput [(ngModel)]="academySearch" /></mat-form-field>
+    <mat-form-field appearance="outline"><mat-label>Academia</mat-label><mat-select [ngModel]="academyId" (ngModelChange)="selectAcademy($event)">
+      <mat-option *ngFor="let academy of filteredAcademies" [value]="academy.id">{{ academy.name }} (#{{ academy.id }})</mat-option>
+    </mat-select></mat-form-field>
+    <p *ngIf="!academies.length">No hay academias registradas.</p>
+    <p *ngIf="academies.length && !filteredAcademies.length">No hay academias que coincidan con la búsqueda.</p>
+    <p *ngIf="!academyId && academies.length" class="subtitle">Selecciona una academia para ver sus usuarios o crear una cuenta.</p>
+    <p *ngIf="academyId">Academia seleccionada: <strong>{{ selectedAcademyName }}</strong></p>
+  </ng-container>
+</section>
+<ng-container *ngIf="academyId">
+<section class="card">
+  <mat-form-field appearance="outline"><mat-label>Buscar por nombre, correo o perfil</mat-label>
+    <input matInput [(ngModel)]="filter" (ngModelChange)="applyFilter()" /></mat-form-field>
+  <div *ngIf="loading" class="state" role="status"><mat-spinner diameter="36"></mat-spinner><p>Cargando usuarios…</p></div>
+  <div *ngIf="error" class="state error" role="alert">{{ error }} <button mat-button (click)="load()">Reintentar</button></div>
+  <div [hidden]="loading || !!error">
+    <div class="table-scroll"><table mat-table [dataSource]="data">
+      <ng-container matColumnDef="name"><th mat-header-cell *matHeaderCellDef>Nombre</th><td mat-cell *matCellDef="let row">{{ row.firstName }} {{ row.lastName }}</td></ng-container>
+      <ng-container matColumnDef="email"><th mat-header-cell *matHeaderCellDef>Correo de acceso</th><td mat-cell *matCellDef="let row">{{ row.email }}</td></ng-container>
+      <ng-container matColumnDef="role"><th mat-header-cell *matHeaderCellDef>Perfil</th><td mat-cell *matCellDef="let row">{{ roleLabel(row.role) }}</td></ng-container>
+      <ng-container matColumnDef="status"><th mat-header-cell *matHeaderCellDef>Estado</th><td mat-cell *matCellDef="let row"><span class="status" [class.active]="row.isActive">{{ row.isActive ? 'Activo' : 'Inactivo' }}</span></td></ng-container>
+      <ng-container matColumnDef="actions"><th mat-header-cell *matHeaderCellDef>Acciones</th><td mat-cell *matCellDef="let row"><button mat-button color="primary" (click)="open(row)" [attr.aria-label]="'Editar usuario ' + row.firstName">Editar</button></td></ng-container>
+      <tr mat-header-row *matHeaderRowDef="columns"></tr><tr mat-row *matRowDef="let row; columns: columns"></tr>
+      <tr *matNoDataRow><td colspan="5" class="state">{{ filter ? 'No hay usuarios que coincidan con la búsqueda.' : 'Aún no hay cuentas administradas desde este mantenedor. Crea la primera cuenta.' }}</td></tr>
+    </table></div>
+    <mat-paginator [pageSize]="10" [pageSizeOptions]="[10, 25, 50]" showFirstLastButtons aria-label="Paginación de usuarios"></mat-paginator>
+  </div>
+</section>
+</ng-container>

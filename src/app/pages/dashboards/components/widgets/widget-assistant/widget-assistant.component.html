@@ -1,0 +1,26 @@
+<div class="card bg-primary-600 flex">
+  <div class="p-4 ml-4 flex-none self-center hidden sm:block">
+    <img
+      src="assets/img/illustrations/checklist.svg"
+      alt=""
+      style="height: 168px; width: 152px" />
+  </div>
+
+  <div class="p-6 text-on-primary-600 flex-auto">
+    <h2 class="headline m-0">Bienvenido{{ firstName ? ' Sr. ' + firstName : '' }}</h2>
+    <p class="caption m-0 opacity-50">
+      Próximos eventos a finalizar
+    </p>
+
+    <p *ngIf="loading" class="body-2 mt-4" role="status">Cargando tus datos…</p>
+    <p *ngIf="nameError" class="body-2 mt-2" role="status">No se pudo cargar tu nombre.</p>
+    <p *ngIf="!loading && eventsError" class="body-2 mt-4" role="status">No se pudieron cargar tus eventos.</p>
+    <p *ngIf="!loading && !eventsError && !events.length" class="body-2 mt-4">No tienes próximos eventos por finalizar.</p>
+    <div *ngFor="let event of events; first as first" class="flex items-center" [class.mt-4]="first" [class.mt-1]="!first">
+      <mat-icon class="mr-2" svgIcon="mat:check_circle"></mat-icon>
+      <a class="body-2 hover:underline focus:underline" [routerLink]="['/campeonatos/mis-eventos', event.id, 'resumen']">
+        {{ event.name }} · {{ event.eventDateEnd | date:'dd/MM/yyyy HH:mm' }}
+      </a>
+    </div>
+  </div>
+</div>

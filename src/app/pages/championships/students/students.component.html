@@ -1,0 +1,49 @@
+<vex-page-layout>
+  <vex-page-layout-header class="pb-16 flex flex-col items-start justify-center">
+    <div class="container w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div><h1 class="title mt-0 mb-1">{{ 'Listado Deportistas y Coach' | translate }}</h1><vex-breadcrumbs [crumbs]="['Campeonatos' | translate, 'Deportistas/Coach' | translate]"></vex-breadcrumbs></div>
+      <div class="header-actions">
+        <button mat-stroked-button color="primary" (click)="downloadList('excel')" [disabled]="loading || !!errorMessage || !!exporting || !exportStudents.length"><mat-icon svgIcon="mat:table_view"></mat-icon>{{ (exporting === 'excel' ? 'Descargando...' : 'Descargar Excel') | translate }}</button>
+        <button mat-stroked-button color="primary" (click)="downloadList('pdf')" [disabled]="loading || !!errorMessage || !!exporting || !exportStudents.length"><mat-icon svgIcon="mat:picture_as_pdf"></mat-icon>{{ (exporting === 'pdf' ? 'Descargando...' : 'Descargar PDF') | translate }}</button>
+        <button mat-flat-button color="primary" (click)="open('student')"><mat-icon svgIcon="mat:person_add"></mat-icon>{{ 'Alumno' | translate }}</button>
+        <button mat-stroked-button color="primary" (click)="open('team')"><mat-icon svgIcon="mat:groups"></mat-icon>{{ 'Equipo' | translate }}</button>
+        <button mat-stroked-button color="primary" (click)="open('attorney')"><mat-icon svgIcon="mat:supervisor_account"></mat-icon>{{ 'Apoderado' | translate }}</button>
+      </div>
+    </div>
+  </vex-page-layout-header>
+
+  <vex-page-layout-content class="container -mt-6">
+    <div class="card overflow-hidden table-card">
+      <div class="table-toolbar">
+        <h2 class="title m-0">{{ 'Deportistas, coach y equipos' | translate }}</h2><span class="flex-1"></span>
+        <mat-form-field subscriptSizing="dynamic"><mat-icon matIconPrefix svgIcon="mat:search"></mat-icon><input matInput [formControl]="searchControl" [placeholder]="'Buscar...' | translate" /></mat-form-field>
+        <button mat-icon-button color="primary" [matTooltip]="'Actualizar' | translate" (click)="load()"><mat-icon svgIcon="mat:refresh"></mat-icon></button>
+      </div>
+
+      <div *ngIf="loading" class="state">{{ 'Cargando deportistas...' | translate }}</div>
+      <div *ngIf="!loading && errorMessage" class="state error"><mat-icon svgIcon="mat:error_outline"></mat-icon>{{ errorMessage }}<button mat-button color="primary" (click)="load()">{{ 'Reintentar' | translate }}</button></div>
+
+      <div class="table-scroll" [class.hidden]="loading || errorMessage">
+        <table mat-table [dataSource]="dataSource" matSort class="w-full">
+          <ng-container matColumnDef="firstName"><th mat-header-cell *matHeaderCellDef mat-sort-header>{{ 'Nombres' | translate }}</th><td mat-cell *matCellDef="let student">{{ student.firstName }}</td></ng-container>
+          <ng-container matColumnDef="lastName"><th mat-header-cell *matHeaderCellDef mat-sort-header>{{ 'Apellidos' | translate }}</th><td mat-cell *matCellDef="let student">{{ student.lastName }}</td></ng-container>
+          <ng-container matColumnDef="role"><th mat-header-cell *matHeaderCellDef mat-sort-header>{{ 'Rol' | translate }}</th><td mat-cell *matCellDef="let student"><span class="role-chip" [class.team]="isTeam(student)">{{ roleLabel(student.role) | translate }}</span></td></ng-container>
+          <ng-container matColumnDef="birthDate"><th mat-header-cell *matHeaderCellDef mat-sort-header>{{ 'Fecha de nacimiento' | translate }}</th><td mat-cell *matCellDef="let student">{{ student.birthDate | date: 'dd/MM/yyyy' }}</td></ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>{{ 'Acciones' | translate }}</th>
+            <td mat-cell *matCellDef="let student">
+              <div class="row-actions">
+                <a *ngIf="!isTeam(student)" mat-icon-button color="primary" [matTooltip]="'Ver perfil integral' | translate" [attr.aria-label]="'Ver perfil integral' | translate" [routerLink]="['/students', student.id]"><mat-icon svgIcon="mat:visibility"></mat-icon></a>
+                <button *ngIf="!isTeam(student)" mat-stroked-button color="primary" (click)="edit(student)"><mat-icon svgIcon="mat:edit"></mat-icon>{{ 'Editar' | translate }}</button>
+                <button mat-stroked-button color="warn" (click)="delete(student)"><mat-icon svgIcon="mat:delete"></mat-icon>{{ 'Eliminar' | translate }}</button>
+              </div>
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr><tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+          <tr class="mat-row" *matNoDataRow><td class="mat-cell empty-row" [attr.colspan]="displayedColumns.length">{{ 'No hay información para mostrar.' | translate }}</td></tr>
+        </table>
+        <mat-paginator [pageSizeOptions]="[10, 25, 50]" [pageSize]="10" showFirstLastButtons></mat-paginator>
+      </div>
+    </div>
+  </vex-page-layout-content>
+</vex-page-layout>

@@ -1,0 +1,29 @@
+.student-summary { display: flex; align-items: center; gap: .75rem; padding: 1rem; margin-bottom: 1rem; border-radius: .75rem; background: rgb(var(--vex-color-primary-50)); }
+.student-summary div { display: flex; flex-direction: column; }.student-summary small { color: var(--vex-text-color-secondary); }
+.dialog-state { min-height: 12rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .75rem; color: var(--vex-text-color-secondary); }
+.category-list { padding: 1rem .25rem; }.category { padding: .65rem; border-bottom: 1px solid rgb(0 0 0 / 8%); }.children { display: flex; flex-direction: column; padding: .5rem 0 0 1.75rem; }
+mat-dialog-content { min-height: 18rem; }
+
+@media (max-width: 959px) {
+  :host { display: flex; flex-direction: column; min-width: 0; max-height: 90vh; max-height: 90dvh; }
+  h2[mat-dialog-title] { flex-shrink: 0; overflow-wrap: anywhere; }
+  mat-dialog-content { min-height: 0; min-width: 0; }
+  mat-dialog-actions { flex-shrink: 0; gap: .5rem; }
+  mat-dialog-actions button { min-height: 48px; }
+  .student-summary div { min-width: 0; overflow-wrap: anywhere; }
+  .student-summary > mat-icon { flex-shrink: 0; }
+  .category { min-width: 0; overflow-wrap: anywhere; }
+  :host ::ng-deep .category .mdc-label { white-space: normal; overflow-wrap: anywhere; }
+  :host ::ng-deep .category .mdc-form-field { min-width: 0; max-width: 100%; }
+  :host ::ng-deep .category .mdc-checkbox { flex-shrink: 0; }
+}
+
+@media (max-width: 599px) {
+  h2[mat-dialog-title] { padding-inline: 1rem; }
+  mat-dialog-content { padding-inline: 1rem; }
+  mat-dialog-actions { padding: .75rem 1rem; }
+  mat-dialog-actions button { flex: 1; margin: 0; }
+  .student-summary { padding: .75rem; }
+  .category { padding: .5rem 0; }
+  .children { padding-left: .75rem; }
+}

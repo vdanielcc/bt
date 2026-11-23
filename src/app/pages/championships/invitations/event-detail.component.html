@@ -1,0 +1,104 @@
+<vex-page-layout>
+  <vex-page-layout-header class="detail-header pb-16 flex flex-col items-start justify-center">
+    <div class="container w-full">
+      <h1 class="title mt-0 mb-1">{{ event?.name || ('Detalle del evento' | translate) }}</h1>
+      <vex-breadcrumbs [crumbs]="['Campeonatos' | translate, 'Invitaciones' | translate, 'Evento' | translate]"></vex-breadcrumbs>
+    </div>
+  </vex-page-layout-header>
+
+  <vex-page-layout-content class="detail-content container -mt-6">
+    <div *ngIf="loading" class="state"><mat-spinner diameter="44"></mat-spinner><span>{{ 'Cargando evento...' | translate }}</span></div>
+    <div *ngIf="!loading && loadError" class="state"><mat-icon svgIcon="mat:error_outline"></mat-icon><h2>{{ 'No pudimos cargar el evento' | translate }}</h2><a mat-flat-button color="primary" routerLink="/campeonatos/invitaciones">{{ 'Volver a eventos' | translate }}</a></div>
+
+    <mat-card *ngIf="!loading && event" class="detail-card">
+      <mat-tab-group animationDuration="200ms">
+        <mat-tab [label]="'Información' | translate">
+          <div class="tab-content info-grid">
+            <div class="poster"><img *ngIf="event.poster" [src]="event.poster" [alt]="event.name"></div>
+            <section class="panel">
+              <h2><mat-icon svgIcon="mat:schedule"></mat-icon>{{ 'Fechas y horarios' | translate }}</h2>
+              <dl><dt>{{ 'Fecha del evento' | translate }}</dt><dd>{{ event.eventDateStart | date:'dd/MM/yyyy' }}</dd>
+                <dt>{{ 'Hora de inicio' | translate }}</dt><dd>{{ event.eventDateStart | date:'HH:mm' }}</dd>
+                <dt>{{ 'Término aproximado' | translate }}</dt><dd>{{ event.eventDateEnd | date:'dd/MM/yyyy HH:mm' }}</dd>
+                <dt>{{ 'Inscripciones hasta' | translate }}</dt><dd>{{ event.eventDateCheckin | date:'dd/MM/yyyy HH:mm' }}</dd></dl>
+            </section>
+            <section class="panel">
+              <h2><mat-icon svgIcon="mat:groups"></mat-icon>{{ 'Organizador' | translate }}</h2>
+              <dl class="organizer-details"><dt>{{ 'Evento' | translate }}</dt><dd>{{ event.name }}</dd><dt>{{ 'Academia' | translate }}</dt><dd>{{ event.academyName || '-' }}</dd></dl>
+              <div class="actions"><a *ngIf="event.eventLinkWhatsapp" mat-flat-button class="whatsapp" [href]="event.eventLinkWhatsapp" target="_blank">WhatsApp</a></div>
+            </section>
+            <section class="panel location">
+              <h2><mat-icon svgIcon="mat:location_on"></mat-icon>{{ 'Ubicación' | translate }}</h2>
+              <p>{{ event.eventLocation }}</p><p>{{ event.eventAddress }}</p>
+              <p *ngIf="event.feeTicket != null"><strong>{{ 'Valor entrada' | translate }}:</strong> {{ event.feeTicket | currency:'CLP':'symbol-narrow':'1.0-0' }}</p>
+              <div class="actions"><a *ngIf="event.eventLinkWaze" mat-stroked-button [href]="event.eventLinkWaze" target="_blank">Waze</a><a *ngIf="event.eventLinkGmaps" mat-stroked-button [href]="event.eventLinkGmaps" target="_blank">Google Maps</a></div>
+            </section>
+            <iframe *ngIf="mapUrl" class="map" [src]="mapUrl" title="Mapa"></iframe>
+            <section *ngIf="event.descriptions" class="panel description"><h2>{{ 'Descripción' | translate }}</h2><div [innerHTML]="description"></div></section>
+            <section class="panel prices"><h2>{{ 'Bases y valores' | translate }}</h2>
+              <div *ngFor="let factor of event.factorList">{{ factor.totalCategories }} {{ 'Categoría' | translate }} {{ factor.description }} — {{ factor.ticketValue | currency:'CLP':'symbol-narrow':'1.0-0' }}</div>
+              <a *ngIf="event.rulesDocument" mat-flat-button color="primary" [href]="event.rulesDocument" target="_blank">{{ 'Ver bases' | translate }}</a>
+            </section>
+          </div>
+        </mat-tab>
+
+        <mat-tab [label]="'Inscripciones' | translate">
+          <div class="tab-content">
+            <mat-form-field appearance="outline" class="student-search" subscriptSizing="dynamic">
+              <mat-label>{{ 'Buscar...' | translate }}</mat-label>
+              <mat-icon matPrefix svgIcon="mat:search"></mat-icon>
+              <input matInput [value]="studentSearch" (input)="applyStudentFilter($any($event.target).value)" [placeholder]="'Buscar...' | translate">
+              <button *ngIf="studentSearch" mat-icon-button matSuffix (click)="applyStudentFilter('')" aria-label="Limpiar"><mat-icon svgIcon="mat:close"></mat-icon></button>
+            </mat-form-field>
+            <div class="students-table-wrap">
+              <div class="students-table-scroll" tabindex="0" role="region" [attr.aria-label]="'Inscripciones' | translate">
+              <table class="students-table">
+                <thead><tr><th>{{ 'Nombres' | translate }}</th><th>{{ 'Apellidos' | translate }}</th><th>{{ 'Rol' | translate }}</th><th>{{ 'Fecha de nacimiento' | translate }}</th><th>{{ 'Acciones' | translate }}</th></tr></thead>
+                <tbody>
+                  <tr *ngFor="let student of pagedStudents"><td>{{ firstName(student) }}</td><td>{{ lastName(student) }}</td><td>{{ role(student) }}</td><td>{{ birthDate(student) | date:'dd/MM/yyyy' }}</td><td><button *ngIf="!registrationClosed || event?.canOverrideRegistrationClose" mat-flat-button color="primary" (click)="openEnrollment(student)"><mat-icon svgIcon="mat:how_to_reg"></mat-icon>{{ 'Inscribir' | translate }}</button></td></tr>
+                  <tr *ngIf="!filteredStudents.length"><td colspan="5" class="empty-cell">{{ (studentSearch ? 'No se encontraron deportistas' : 'No hay deportistas disponibles') | translate }}</td></tr>
+                </tbody>
+              </table>
+              </div>
+              <mat-paginator [length]="filteredStudents.length" [pageIndex]="studentPageIndex" [pageSize]="studentPageSize" [pageSizeOptions]="[5, 10, 25, 50]" [showFirstLastButtons]="true" (page)="changeStudentPage($event)"></mat-paginator>
+            </div>
+            <div class="confirmation-actions"><a mat-flat-button color="primary" [routerLink]="['/campeonatos/invitaciones', eventId, 'resumen']">{{ 'Confirmar' | translate }}<mat-icon svgIcon="mat:arrow_forward"></mat-icon></a></div>
+          </div>
+        </mat-tab>
+
+        <mat-tab [label]="'Categorías' | translate">
+          <div class="tab-content">
+            <div *ngIf="loadingEventCategories" class="categories-loading"><mat-spinner diameter="36"></mat-spinner><span>{{ 'Cargando categorías...' | translate }}</span></div>
+            <div *ngIf="categoriesError" class="categories-error"><mat-icon svgIcon="mat:error_outline"></mat-icon><span>{{ 'No pudimos cargar las categorías' | translate }}</span><button mat-stroked-button color="primary" (click)="loadCategories()">{{ 'Reintentar' | translate }}</button></div>
+            <mat-accordion *ngIf="!loadingEventCategories && !categoriesError">
+            <mat-expansion-panel *ngFor="let category of categories"><mat-expansion-panel-header><mat-panel-title>{{ categoryName(category) }}</mat-panel-title></mat-expansion-panel-header>
+              <div class="competitor" *ngFor="let competitor of competitors(category)"><span>{{ fullName(competitor) }}</span><span>{{ competitor.academyName || competitor.AcademyName }}</span></div>
+              <p *ngIf="category.competitorsError">No pudimos cargar los inscritos de esta categor?a. <button mat-stroked-button (click)="loadCategories()">{{ 'Reintentar' | translate }}</button></p>
+              <p *ngIf="!category.competitorsError && !competitors(category).length">{{ 'Sin datos' | translate }}</p>
+            </mat-expansion-panel>
+          </mat-accordion><p *ngIf="!loadingEventCategories && !categoriesError && !categories.length">{{ 'No hay categorías disponibles' | translate }}</p></div>
+        </mat-tab>
+
+        <mat-tab [label]="'Llaves' | translate">
+          <div class="tab-content fixtures-tab">
+            <div *ngIf="loadingFixtureCategories" class="categories-loading"><mat-spinner diameter="36"></mat-spinner><span>{{ 'Cargando categorías...' | translate }}</span></div>
+            <div *ngIf="fixtureCategoriesError" class="categories-error"><mat-icon svgIcon="mat:error_outline"></mat-icon><span>{{ 'No pudimos cargar las categorías' | translate }}</span><button mat-stroked-button color="primary" (click)="loadFixtureCategories()">{{ 'Reintentar' | translate }}</button></div>
+            <ng-container *ngIf="!loadingFixtureCategories && !fixtureCategoriesError">
+              <mat-form-field appearance="outline" class="fixture-category-select"><mat-label>{{ 'Categoría' | translate }}</mat-label><mat-select [(value)]="selectedFixtureCategoryId" (selectionChange)="selectFixtureCategory()"><mat-option *ngFor="let category of fixtureCategories" [value]="categoryId(category)">{{ categoryName(category) }} - ({{ categoryCompetitorCount(category) }})</mat-option></mat-select></mat-form-field>
+              <div *ngIf="loadingFixture" class="fixture-state"><mat-spinner diameter="36"></mat-spinner><span>{{ 'Cargando llaves...' | translate }}</span></div>
+              <div *ngIf="selectedFixtureCategoryId && !loadingFixture && (!selectedFixtureCategory || fixtureVersion(selectedFixtureCategory) <= 0 || !fixtureRounds.length)" class="fixture-state preparation"><mat-icon svgIcon="mat:schedule"></mat-icon><strong>{{ 'Llaves en preparación' | translate }}</strong></div>
+              <section *ngIf="!loadingFixture && fixtureRounds.length" class="readonly-fixture" tabindex="0" [attr.aria-label]="'Llaves' | translate">
+                <header><h2>{{ event.name }}</h2><strong>{{ categoryName(selectedFixtureCategory) }}</strong><small>{{ fixtureColorCaption }} · {{ 'Versión' | translate }} {{ fixtureVersion(latestFixture) }}</small></header>
+                <bte-kudo-repechage-fixture *ngIf="savedFixtureType === 'KUDOREPECHAGE'" [rounds]="fixtureRounds"></bte-kudo-repechage-fixture>
+                <bte-score-only-fixture *ngIf="savedFixtureType === 'SOLOPUNTAJE'" [rounds]="fixtureRounds"></bte-score-only-fixture>
+                <bte-kata-jka-fixture *ngIf="savedFixtureType === 'KATAJKA'" [rounds]="fixtureRounds"></bte-kata-jka-fixture>
+                <div *ngIf="savedFixtureType !== 'KUDOREPECHAGE' && savedFixtureType !== 'KATAJKA' && savedFixtureType !== 'SOLOPUNTAJE'" class="readonly-bracket" [class.independent-matches]="!fixtureIsElimination"><section class="readonly-round" *ngFor="let round of fixtureRounds; index as roundIndex"><h3>{{ roundName(round, roundIndex) }}</h3><p *ngIf="roundRestingNames(round)" class="round-rest">Descansa: {{ roundRestingNames(round) }}</p><div class="readonly-matches" [style.--match-count]="roundMatches(round).length"><div class="readonly-match-position" *ngFor="let match of roundMatches(round)"><article class="readonly-match"><div [style.--top-corner-color]="fixtureTopColor" [class.empty-side]="fixtureSideIsEmpty(match, true)" [class.past-side]="fixtureSideIsPast(match, true, roundIndex)"><b>{{ fixtureTopLabel }}</b><span><strong>{{ fixtureCompetitorName(fixtureSide(match, true)) }}</strong><small>{{ fixtureAcademy(fixtureSide(match, true)) }}</small></span></div><div [class.light-corner]="fixtureLightCorner" [style.--corner-color]="fixtureLightCorner ? '#f8fafc' : '#0957d9'" [class.empty-side]="fixtureSideIsEmpty(match, false)" [class.past-side]="fixtureSideIsPast(match, false, roundIndex)"><b>{{ fixtureBottomLabel }}</b><span><strong>{{ fixtureCompetitorName(fixtureSide(match, false)) }}</strong><small>{{ fixtureAcademy(fixtureSide(match, false)) }}</small></span></div></article></div></div></section><section *ngIf="fixtureIsElimination" class="readonly-round winner-round"><h3>Ganador</h3><div class="winner-position"><div class="winner-card" aria-label="Ganador de la final"><strong>{{ fixtureCompetitorName(fixtureWinner) }}</strong><small>{{ fixtureAcademy(fixtureWinner) }}</small></div></div></section></div>
+              </section>
+              <p *ngIf="!fixtureCategories.length" class="fixture-state">{{ 'No hay categorías disponibles' | translate }}</p>
+            </ng-container>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </mat-card>
+  </vex-page-layout-content>
+</vex-page-layout>

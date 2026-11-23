@@ -1,0 +1,133 @@
+<div class="login-page bg-pattern">
+  <section class="events-column" @fadeInUp aria-label="Próximos eventos">
+    <div class="events-heading">
+      <span class="eyebrow">Budo Tournament Events</span>
+      <h1>Próximos eventos</h1>
+      <p>Conoce los campeonatos que se realizarán próximamente.</p>
+    </div>
+
+    <div *ngIf="loadingEvents" class="event-state">Cargando eventos...</div>
+    <div *ngIf="!loadingEvents && eventsLoadError" class="event-state error">
+      <span>No pudimos cargar los eventos.</span>
+      <button mat-stroked-button color="primary" type="button" (click)="loadUpcomingEvents()">Reintentar</button>
+    </div>
+    <div *ngIf="!loadingEvents && !eventsLoadError && !upcomingEvents.length" class="event-state">
+      No hay próximos eventos publicados.
+    </div>
+
+    <article *ngIf="!loadingEvents && currentEvent as event" class="event-card">
+      <div class="event-poster">
+        <img *ngIf="event.poster" [src]="event.poster" [alt]="event.name" />
+        <mat-icon *ngIf="!event.poster" svgIcon="mat:emoji_events"></mat-icon>
+      </div>
+      <div class="event-content">
+        <span class="event-type" *ngIf="event.eventType">{{ event.eventType }}</span>
+        <h2>{{ event.name }}</h2>
+        <div class="event-meta">
+          <span><mat-icon svgIcon="mat:event"></mat-icon>{{ event.eventDateStart || event.eventDateCheckin | date:'dd/MM/yyyy' }}</span>
+          <span *ngIf="event.eventLocation"><mat-icon svgIcon="mat:location_on"></mat-icon>{{ event.eventLocation }}</span>
+          <span *ngIf="event.academyName"><mat-icon svgIcon="mat:groups"></mat-icon>{{ event.academyName }}</span>
+        </div>
+      </div>
+    </article>
+
+    <div *ngIf="upcomingEvents.length > 1" class="carousel-controls">
+      <button mat-icon-button type="button" (click)="previousEvent()" aria-label="Evento anterior"><mat-icon svgIcon="mat:chevron_left"></mat-icon></button>
+      <div class="carousel-dots">
+        <button *ngFor="let event of upcomingEvents; let i = index" type="button" class="carousel-dot"
+          [class.active]="i === currentEventIndex" [attr.aria-current]="i === currentEventIndex ? 'true' : null"
+          (click)="selectEvent(i)" [attr.aria-label]="'Ver ' + event.name"></button>
+      </div>
+      <button mat-icon-button type="button" (click)="nextEvent()" aria-label="Evento siguiente"><mat-icon svgIcon="mat:chevron_right"></mat-icon></button>
+    </div>
+  </section>
+
+  <div @fadeInUp class="card login-card overflow-hidden w-full max-w-md">
+    <div class="language-selector">
+      <mat-form-field subscriptSizing="dynamic">
+        <mat-label>{{ 'auth.login.language' | translate }}</mat-label>
+        <mat-select [value]="activeLanguage" (selectionChange)="selectLanguage($event.value)">
+          <mat-option *ngFor="let language of languages" [value]="language">
+            <mat-icon [svgIcon]="language.flag"></mat-icon>
+            {{ language.label }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <div class="p-6 pb-0 flex flex-col items-center justify-center">
+      <div class="fill-current text-center">
+        <img class="w-16" src="assets/img/logo/budo-tournaments.png" />
+      </div>
+    </div>
+
+    <div class="text-center mt-4">
+      <h2 class="title m-0">{{ 'auth.login.title' | translate }}</h2>
+      <h4 class="body-2 text-secondary m-0">
+        {{ 'auth.login.subtitle' | translate }}
+      </h4>
+    </div>
+
+    <div [formGroup]="form" class="p-6 flex flex-col gap-4">
+      <div class="flex flex-col">
+        <mat-form-field class="flex-1">
+          <mat-label>{{ 'auth.login.email' | translate }}</mat-label>
+          <input formControlName="email" matInput required />
+          <mat-error *ngIf="form.controls.email.hasError('required')"
+          >{{ 'auth.login.emailRequired' | translate }}
+          </mat-error>
+          <mat-error *ngIf="form.controls.email.hasError('email')"
+          >{{ 'auth.login.emailInvalid' | translate }}
+          </mat-error>
+        </mat-form-field>
+        <mat-form-field class="flex-1">
+          <mat-label>{{ 'auth.login.password' | translate }}</mat-label>
+          <input
+            [type]="inputType"
+            formControlName="password"
+            matInput
+            required />
+          <button
+            (click)="toggleVisibility()"
+            mat-icon-button
+            matIconSuffix
+            [matTooltip]="'auth.login.toggleVisibility' | translate"
+            type="button">
+            <mat-icon *ngIf="visible" svgIcon="mat:visibility"></mat-icon>
+            <mat-icon *ngIf="!visible" svgIcon="mat:visibility_off"></mat-icon>
+          </button>
+          <mat-hint>{{ 'auth.login.showPasswordHint' | translate }}</mat-hint>
+          <mat-error *ngIf="form.controls.password.hasError('required')"
+          >{{ 'auth.login.passwordRequired' | translate }}
+          </mat-error>
+          <mat-error *ngIf="form.controls.password.hasError('minlength')"
+          >{{ 'auth.login.passwordMinLength' | translate }}
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="login-options">
+        <mat-checkbox class="caption" color="primary" formControlName="rememberMe">Mantener sesión por 12 horas</mat-checkbox>
+        <a [routerLink]="['/forgot-password']" class="caption"
+        >{{ 'auth.login.forgotPassword' | translate }}</a
+        >
+      </div>
+
+      <button
+        (click)="send()"
+        [disabled]="isSubmitting"
+        [attr.aria-busy]="isSubmitting"
+        class="login-submit"
+        color="primary"
+        mat-raised-button
+        type="button">
+        <mat-spinner *ngIf="isSubmitting" diameter="20" aria-hidden="true"></mat-spinner>
+        <span>{{ 'auth.login.submit' | translate }}</span>
+      </button>
+
+      <p class="text-secondary text-center">
+        {{ 'auth.login.noAccount' | translate }}<br />
+        <a [routerLink]="['/register']">{{ 'auth.login.createAccount' | translate }}</a>
+      </p>
+    </div>
+  </div>
+</div>
