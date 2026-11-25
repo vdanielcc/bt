@@ -6,11 +6,12 @@ describe('Competitor category actions', () => {
   const categories = [source, { id: 2, modalityId: 2 }, { id: 3, modalityId: 1 }, { id: 4, modalityId: 2 }];
   const roster = [{ id: 1, competitors: [{ studentId: 10 }] }, { id: 3, competitors: [{ studentId: 10 }] }];
   function setup(action: 'remove' | 'move' = 'move') {
-    const service = jasmine.createSpyObj('service', ['getCompetitor', 'getEventEnrollmentCategories', 'getEligibleCategories', 'enroll', 'enrollTeam']);
+    const service = jasmine.createSpyObj('service', ['getCompetitor', 'getEventEnrollmentCategories', 'getEligibleCategories', 'enroll', 'enrollTeam', 'moveCompetitorCategory']);
     service.getCompetitor.and.returnValue(of({ id: 100, eventId: 32, studentId: 10, academyId: 99 }));
     service.getEventEnrollmentCategories.and.returnValue(of(roster));
     service.getEligibleCategories.and.returnValue(of([{ id: 1 }, { id: 2 }, { id: 3 }]));
     service.enroll.and.returnValue(of({})); service.enrollTeam.and.returnValue(of({}));
+    service.moveCompetitorCategory.and.returnValue(of({}));
     const dialog = { close: jasmine.createSpy(), disableClose: false };
     const component = new CompetitorCategoryDialogComponent({ eventId: 32, competitorId: 100, name: 'Deportista', category: source, categories, action }, dialog as any, service);
     return { component, service, dialog };
@@ -27,10 +28,11 @@ describe('Competitor category actions', () => {
     expect(component.targets.map(item => item.id)).toEqual([2]);
     expect(service.getEligibleCategories).toHaveBeenCalledWith(32, 10, 'Sportman');
   });
-  it('moves using the entrant academy and preserves even categories not returned as eligible', async () => {
+  it('moves through the dedicated endpoint without resubmitting enrollment', async () => {
     const { component, service, dialog } = setup(); await component.load();
     component.targetId = 2; await component.save();
-    expect(service.enroll).toHaveBeenCalledOnceWith(32, 10, [3, 2], 99);
+    expect(service.moveCompetitorCategory).toHaveBeenCalledOnceWith(32, 100, 1, 2);
+    expect(service.enroll).not.toHaveBeenCalled();
     expect(dialog.close).toHaveBeenCalledWith({ sourceId: 1, targetId: 2 });
   });
   it('removes only the source, including when it is the last category', async () => {
@@ -40,19 +42,22 @@ describe('Competitor category actions', () => {
     expect(service.enroll).toHaveBeenCalledOnceWith(32, 10, [], 99);
     expect(service.getEligibleCategories).not.toHaveBeenCalled();
   });
-  it('rechecks the full roster before saving and preserves new unrelated enrollments', async () => {
+  it('rechecks the roster and submits only the move so concurrent enrollments are preserved', async () => {
     const { component, service } = setup(); await component.load(); component.targetId = 2;
     service.getEventEnrollmentCategories.and.returnValue(of([...roster, { id: 7, competitors: [{ studentId: 10 }] }]));
     await component.save();
-    expect(service.enroll).toHaveBeenCalledOnceWith(32, 10, [3, 7, 2], 99);
+    expect(service.moveCompetitorCategory).toHaveBeenCalledOnceWith(32, 100, 1, 2);
+    expect(service.enroll).not.toHaveBeenCalled();
   });
   it('does not submit if source enrollment disappeared or destination is no longer eligible', async () => {
     const { component, service, dialog } = setup(); await component.load(); component.targetId = 2;
     service.getEligibleCategories.and.returnValue(of([])); await component.save();
+    expect(service.moveCompetitorCategory).not.toHaveBeenCalled();
     expect(service.enroll).not.toHaveBeenCalled(); expect(dialog.close).not.toHaveBeenCalled();
     service.getEligibleCategories.and.returnValue(of([{ id: 2 }]));
     service.getEventEnrollmentCategories.and.returnValue(of([roster[1]])); await component.save();
     expect(service.enroll).not.toHaveBeenCalled();
+    expect(service.moveCompetitorCategory).not.toHaveBeenCalled();
   });
   it('supports team entries without confusing their IDs with athlete IDs', async () => {
     const { component, service } = setup('remove');

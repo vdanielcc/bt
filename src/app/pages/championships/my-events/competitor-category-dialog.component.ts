@@ -114,7 +114,9 @@ export class CompetitorCategoryDialogComponent implements OnInit {
       if (target && !(await this.availableTargets(ids)).some(category => this.id(category) === target)) throw new Error('La categoría de destino ya no está disponible.');
       const updated = transferCategoryIds(ids, this.id(this.data.category), target);
       const studentId = Number(this.competitor.studentId ?? this.competitor.StudentId);
-      const request = studentId
+      const request = target
+        ? this.service.moveCompetitorCategory(this.data.eventId, this.data.competitorId, this.id(this.data.category), target)
+        : studentId
         ? this.service.enroll(this.data.eventId, studentId, updated, Number(this.competitor.academyId ?? this.competitor.AcademyId))
         : this.service.enrollTeam(this.data.eventId, Number(this.competitor.teamId ?? this.competitor.TeamId), updated);
       await firstValueFrom(request);

@@ -5,6 +5,7 @@
   <ng-container *ngIf="!loading && !loadError && summary">
     <a mat-stroked-button [routerLink]="['/campeonatos/mis-eventos', eventId, 'tarifas']">Tarifas de inscripción</a>
     <bte-pricing-summary-card [eventId]="eventId"></bte-pricing-summary-card>
+    <bte-event-dojo-payments-pdf *ngIf="canManageCompetitors" [eventId]="eventId" [eventName]="event?.name || ''"></bte-event-dojo-payments-pdf>
     <div class="metrics">
       <button class="metric primary" (click)="show('academies')"><mat-icon svgIcon="mat:school"></mat-icon><strong>{{ summary.totalAcademias ?? summary.TotalAcademias ?? 0 }}</strong><span>{{ 'Dojos inscritos' | translate }}</span><small>{{ 'Más información' | translate }}</small></button>
       <button class="metric success" (click)="show('categories')"><mat-icon svgIcon="mat:category"></mat-icon><strong>{{ summary.totalCategorias ?? summary.TotalCategorias ?? 0 }}</strong><span>{{ 'Categorías disponibles' | translate }}</span><small>{{ 'Más información' | translate }}</small></button>

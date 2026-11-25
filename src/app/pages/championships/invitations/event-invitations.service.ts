@@ -193,6 +193,12 @@ export class EventInvitationsService {
       .pipe(map(response => this.asArray(response)));
   }
 
+  moveCompetitorCategory(eventId: number, competitorId: number, sourceCategoryId: number, targetCategoryId: number): Observable<unknown> {
+    return this.http.post(`${environment.apiBaseUrl}/Competitors/${competitorId}/move-category`, {
+      eventId, sourceCategoryId, targetCategoryId
+    });
+  }
+
   enroll(
     eventId: number,
     studentId: number,

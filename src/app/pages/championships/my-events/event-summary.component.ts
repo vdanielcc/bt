@@ -1,4 +1,5 @@
 import { RegistrationCountsComponent } from '../invitations/registration-counts.component';
+import { EventDojoPaymentsPdfComponent } from './event-dojo-payments-pdf.component';
 import { KudoRepechageFixtureComponent } from '../my-events/kudo-repechage-fixture.component';
 import { ScoreOnlyFixtureComponent } from './score-only-fixture.component';
 import { PricingSummaryCardComponent } from '../pricing/pricing-summary-card.component';
@@ -46,7 +47,7 @@ interface SlotLocation { roundIndex: number; matchIndex: number; position: 'top'
 @Component({ selector: 'bte-event-summary', standalone: true,
   templateUrl: './event-summary.component.html', styleUrls: ['./event-summary.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RegistrationCountsComponent, KudoRepechageFixtureComponent, ScoreOnlyFixtureComponent, KataJkaFixtureComponent, EventPaymentReviewComponent, PricingSummaryCardComponent, CommonModule, RouterLink, MatButtonModule, MatCardModule, MatFormFieldModule,
+  imports: [EventDojoPaymentsPdfComponent, RegistrationCountsComponent, KudoRepechageFixtureComponent, ScoreOnlyFixtureComponent, KataJkaFixtureComponent, EventPaymentReviewComponent, PricingSummaryCardComponent, CommonModule, RouterLink, MatButtonModule, MatCardModule, MatFormFieldModule,
     MatIconModule, MatProgressSpinnerModule, MatSelectModule, MatAutocompleteModule, MatInputModule, MatTooltipModule, VexBreadcrumbsComponent,
     MatSnackBarModule, MatDialogModule, MatMenuModule, DragDropModule, VexPageLayoutComponent, VexPageLayoutContentDirective,
     VexPageLayoutHeaderDirective, TranslatePipe] })
